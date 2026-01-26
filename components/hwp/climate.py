@@ -181,26 +181,11 @@ def create_throttle_avg_filter(sensor_name):
 # Updated for ESPHome 2025.11.0+ standards
 CONFIG_SCHEMA = climate.climate_schema(PoolHeater).extend(
     {
-        # CONF_ID is now handled by climate_schema(PoolHeater), 
-        # but you can keep it here if you need a specific declaration
-        cv.GenerateID(): cv.declare_id(PoolHeater),
         
         cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
             {CONF_OUTPUT: True, CONF_INPUT: True}
         ),
-        
-        # Note: CONF_NAME is usually handled by the base climate_schema,
-        # but kept here if you are overriding standard behavior.
-        cv.Optional(CONF_NAME, default="Pool Heater"): cv.Any(
-            cv.All(
-                cv.none,
-                cv.requires_friendly_name(
-                    "Name cannot be None when esphome->friendly_name is not set!"
-                ),
-            ),
-            cv.string,
-        ),
-        
+    
         cv.Optional(
             CONF_ACTIVE_MODE_SWITCH, default={"name": "Active Mode"}
         ): switch.switch_schema(
