@@ -178,6 +178,67 @@ def create_throttle_avg_filter(sensor_name):
         ]
     }
 
+SENSORS_SCHEMA = cv.All(
+    {
+        cv.Optional(
+            sensor_designator,
+            default={
+                "name": f"{sensor_name}",
+                "disabled_by_default": "false",
+                **(filter_creation(sensor_designator) if filter_creation else {}),
+            },
+        ): sensor_schema
+        for sensor_designator, (
+            sensor_name,
+            sensor_schema,
+            _,
+            filter_creation,
+        ) in SENSORS.items()
+    }
+)
+
+# for each inputs item in the list, declare the associated class name in the 
+# heat pump name space and update the list
+for sensor_designator, (
+    sensor_name,
+    schema_name,
+    schema_options,
+    register_options,
+) in INPUTS.items():
+    schema_registry = INPUT_TYPES_TEMPLATE[schema_name]
+    schema_options["class_"] = (
+        hwp_ns.class_(
+            f'{sensor_designator}_{schema_registry["suffix"]}',
+            schema_registry["class_"],
+        )
+        if len(schema_registry["suffix"]) > 0
+        else schema_registry["class_"]
+    )
+    schema_options["entity_category"] = ENTITY_CATEGORY_CONFIG
+    INPUTS[sensor_designator] = (
+        sensor_name,
+        schema_name,
+        schema_options,
+        register_options,
+    )
+
+# create the overall input schema from all the inputs, each with its schema type, 
+# assigning the name and passing schema creation options when specified
+INPUTS_SCHEMA = cv.All(
+    {
+        cv.Optional(sensor_designator, default={"name": f"{sensor_name}"}): INPUT_TYPES_TEMPLATE[
+            schema_name
+        ]["schema"](**schema_options)
+        for sensor_designator, (
+            sensor_name,
+            schema_name,
+            schema_options,
+            _,
+        ) in INPUTS.items()
+    }
+)
+
+
 # Updated for ESPHome 2025.11.0+ standards
 CONFIG_SCHEMA = (
     climate.climate_schema(PoolHeater).
@@ -563,65 +624,7 @@ SENSORS = dict[str, tuple[str, cv.Schema, callable]](
     }
 )
 
-SENSORS_SCHEMA = cv.All(
-    {
-        cv.Optional(
-            sensor_designator,
-            default={
-                "name": f"{sensor_name}",
-                "disabled_by_default": "false",
-                **(filter_creation(sensor_designator) if filter_creation else {}),
-            },
-        ): sensor_schema
-        for sensor_designator, (
-            sensor_name,
-            sensor_schema,
-            _,
-            filter_creation,
-        ) in SENSORS.items()
-    }
-)
 
-# for each inputs item in the list, declare the associated class name in the 
-# heat pump name space and update the list
-for sensor_designator, (
-    sensor_name,
-    schema_name,
-    schema_options,
-    register_options,
-) in INPUTS.items():
-    schema_registry = INPUT_TYPES_TEMPLATE[schema_name]
-    schema_options["class_"] = (
-        hwp_ns.class_(
-            f'{sensor_designator}_{schema_registry["suffix"]}',
-            schema_registry["class_"],
-        )
-        if len(schema_registry["suffix"]) > 0
-        else schema_registry["class_"]
-    )
-    schema_options["entity_category"] = ENTITY_CATEGORY_CONFIG
-    INPUTS[sensor_designator] = (
-        sensor_name,
-        schema_name,
-        schema_options,
-        register_options,
-    )
-
-# create the overall input schema from all the inputs, each with its schema type, 
-# assigning the name and passing schema creation options when specified
-INPUTS_SCHEMA = cv.All(
-    {
-        cv.Optional(sensor_designator, default={"name": f"{sensor_name}"}): INPUT_TYPES_TEMPLATE[
-            schema_name
-        ]["schema"](**schema_options)
-        for sensor_designator, (
-            sensor_name,
-            schema_name,
-            schema_options,
-            _,
-        ) in INPUTS.items()
-    }
-)
 
 @coroutine
 async def to_code(config):
