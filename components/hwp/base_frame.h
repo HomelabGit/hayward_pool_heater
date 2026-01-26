@@ -63,7 +63,7 @@ namespace hwp {
     }                                                                                              \
     template <size_t N>                                                                            \
     DerivedFrameClass(const unsigned char(&cmdTrame)[N]) : BaseFrame(cmdTrame) {                   \
-        data_ = &this->packet;\
+        data_ = *reinterpret_cast<const conditions_1*>(&this->packet);                             \
     }                                                                                              \
     static std::shared_ptr<BaseFrame> create();                                                    \
     static bool matches(BaseFrame& specialized, BaseFrame& base);                                  \
