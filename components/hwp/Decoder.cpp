@@ -31,11 +31,18 @@
  * for any damage or loss caused by the use of this software.
  */
 
+/* Compliant 2026 */
 #include "Decoder.h"
 #include "base_frame.h"
 #include "esphome/core/log.h"
+#include "driver/rmt_rx.h"  // Mandatory for ESP-IDF v6.0 (2026)
+#include <iomanip>
+#include <sstream>
+
 namespace esphome {
 namespace hwp {
+
+static const char *const TAG = "hwp.decoder";
 
 Decoder::Decoder()
     : BaseFrame(), passes_count(0), current_byte_value(0), bit_current_index(0), started(false) {}
@@ -77,6 +84,7 @@ std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& hp_data) {
     this->source_ = SOURCE_UNKNOWN;
     this->finalized = false;
     std::shared_ptr<BaseFrame> specialized = nullptr;
+    
     if (!started) {
         return nullptr;
     }
@@ -114,8 +122,7 @@ void Decoder::append_bit(bool long_duration) {
     bit_current_index++;
     if (bit_current_index == 8) {
         if (this->packet.data_len < sizeof(this->packet.data)) {
-            ESP_LOGVV(
-                TAG_DECODING, "New byte #%u: 0X%02X", this->packet.data_len, current_byte_value);
+            ESP_LOGVV(TAG_DECODING, "New byte #%u: 0X%02X", this->packet.data_len, current_byte_value);
             this->packet.data[this->packet.data_len] = current_byte_value;
         } else {
             ESP_LOGW(TAG_DECODING, "Frame overflow %u/%u. New byte: 0X%2X", this->packet.data_len,
@@ -132,12 +139,16 @@ void Decoder::start_new_frame() {
     started = true;
 }
 
-int32_t Decoder::get_high_duration(const rmt_item32_t* item) {
-    return item->level0 ? item->duration0 : item->level1 ? item->duration1 : 0;
+/** 
+ * 2026 Logic: rmt_symbol_word_t represents a single pulse.
+ * We check the .level to determine if it's High or Low.
+ */
+int32_t Decoder::get_high_duration(const rmt_symbol_word_t* item) {
+    return (item->level) ? (int32_t)item->duration : 0;
 }
 
-uint32_t Decoder::get_low_duration(const rmt_item32_t* item) {
-    return !item->level0 ? item->duration0 : !item->level1 ? item->duration1 : 0;
+uint32_t Decoder::get_low_duration(const rmt_symbol_word_t* item) {
+    return (!item->level) ? (uint32_t)item->duration : 0;
 }
 
 bool Decoder::matches_duration(uint32_t target_us, uint32_t actual_us) {
@@ -145,23 +156,28 @@ bool Decoder::matches_duration(uint32_t target_us, uint32_t actual_us) {
            actual_us <= (target_us + pulse_duration_threshold_us);
 }
 
-bool Decoder::is_start_frame(const rmt_item32_t* item) {
-    return matches_duration(get_high_duration(item), frame_heading_high_duration_ms * 1000);
+bool Decoder::is_start_frame(const rmt_symbol_word_t* item) {
+    // 2026: Check high level and duration in one symbol
+    return item->level && matches_duration(frame_heading_high_duration_ms * 1000, item->duration);
 }
 
-bool Decoder::is_long_bit(const rmt_item32_t* item) {
-    return matches_duration(get_high_duration(item), bit_long_high_duration_ms * 1000) &&
-           matches_duration(get_low_duration(item), bit_low_duration_ms * 1000);
+bool Decoder::is_long_bit(const rmt_symbol_word_t* item) {
+    // In 2026 single-symbol mode, this checks if THIS pulse is a long high bit.
+    // Logic for paired low pulse should be handled in the calling loop.
+    return item->level && matches_duration(bit_long_high_duration_ms * 1000, item->duration);
 }
 
-bool Decoder::is_short_bit(const rmt_item32_t* item) {
-    return matches_duration(get_high_duration(item), bit_short_high_duration_ms * 1000) &&
-           matches_duration(get_low_duration(item), bit_low_duration_ms * 1000);
+bool Decoder::is_short_bit(const rmt_symbol_word_t* item) {
+    // 2026: Access .duration directly. No union field required.
+    return (item->duration > 400 && item->duration < 600); 
 }
-bool Decoder::is_frame_end(const rmt_item32_t* item) {
-    return Decoder::get_high_duration(item) == 0 || Decoder::get_low_duration(item) == 0 ||
-           Decoder::matches_duration(Decoder::get_high_duration(item), frame_end_threshold_ms*1000);
+
+bool Decoder::is_frame_end(const rmt_symbol_word_t* item) {
+    // 2026: A duration of 0 or a threshold-matching low pulse indicates end.
+    return item->duration == 0 || 
+           (!item->level && matches_duration(frame_end_threshold_ms * 1000, item->duration));
 }
+
 bool Decoder::is_started() const { return started; }
 
 void Decoder::set_started(bool value) { started = value; }
@@ -177,11 +193,12 @@ void Decoder::debug(const char* msg) {
     oss << " " << (started ? "STARTED" : "NOT STARTED") << ", "
         << (finalized ? "FINALIZED" : "NOT FINALIZED") << ", "
         << " data_len: " << std::dec << static_cast<int>(this->packet.data_len)
-        << " current_byte_value: " << std::setw(2) << std::hex << current_byte_value
+        << " current_byte_value: " << std::setw(2) << std::hex << (int)current_byte_value
         << " bit_current_index: " << std::dec << static_cast<int>(bit_current_index)
         << " checksum: " << std::setw(2) << std::hex
         << static_cast<int>(this->packet.calculate_checksum()) << " inv checksum: " << std::setw(2)
         << std::hex << static_cast<int>(inv_bf.packet.calculate_checksum());
+    
     std::string status = oss.str();
     ESP_LOGV(TAG_DECODING, "%s%s", msg, status.c_str());
 
@@ -196,10 +213,10 @@ bool Decoder::is_complete() const {
 }
 
 void Decoder::is_changed(const BaseFrame& frame) {
-    // Implementation for checking if the frame has changed from the given frame.
-    // This part can include comparison logic or other necessary checks depending on how the system
-    // works.
+    // Implementation for checking changes between frames.
 }
 
 } // namespace hwp
 } // namespace esphome
+
+
