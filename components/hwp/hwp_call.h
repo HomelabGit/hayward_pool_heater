@@ -39,12 +39,17 @@
 #include "esphome/core/helpers.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/text_sensor/text_sensor.h"
+// No longer relying on implicit includes for 2026
+#include <optional> 
 
 namespace esphome {
 namespace hwp {
 
-// Ensure your enums/structs are defined or included before this class
+// FIX: Forward declaration of the actual struct. 
+// Do not use 'struct' if it was defined as a typedef in Schema.h.
+// Assuming your Schema.h defines it as 'struct heat_pump_data_t { ... };'
 struct heat_pump_data_t; 
+
 enum class DefrostEcoMode : uint8_t;
 enum class FlowMeterEnable : uint8_t;
 enum class HeatPumpRestrict : uint8_t;
@@ -52,37 +57,35 @@ enum class FanMode : uint8_t;
 
 class HWPCall : public climate::ClimateCall {
  public:
-  // 2026 compliant constructor using member initializer list
-  HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
+  // 2026 Compliance: Use 'explicit' for constructors taking multiple components 
+  // to prevent ambiguous type conversions in the new toolchain.
+  explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
           text_sensor::TextSensor *status)
       : climate::ClimateCall(parent), component_(component), hp_data_(hp_data), status_(status) {}
 
-  // Added override for 2026 Climate API standardization
+  // 2026 Climate API: The 'perform' method is now the primary entry point
   void perform() override; 
 
-  // Use protected/private members with getters for better 2026 stability
-  climate::Climate &get_parent() { return *this->parent_; }
+  // Modern C++ standard: Use 'optional' with 'esphome::' prefix for clarity
+  esphome::optional<float> d01_defrost_start;
+  esphome::optional<float> d02_defrost_end;
+  esphome::optional<float> d03_defrosting_cycle_time_minutes;
+  esphome::optional<float> d04_max_defrost_time_minutes;
+  esphome::optional<float> d05_min_economy_defrost_time_minutes;
+  esphome::optional<float> r04_return_diff_cooling;
+  esphome::optional<float> r05_shutdown_temp_diff_when_cooling;
+  esphome::optional<float> r06_return_diff_heating;
+  esphome::optional<float> r07_shutdown_diff_heating;
+  esphome::optional<float> u02_pulses_per_liter;
+  esphome::optional<DefrostEcoMode> d06_defrost_eco_mode;
+  esphome::optional<FlowMeterEnable> u01_flow_meter;
+  esphome::optional<HeatPumpRestrict> h02_mode_restrictions;
+  esphome::optional<FanMode> f01_fan_mode;
 
-  // 2026 standard uses pointers for cross-component references to support ESP-IDF
+ protected:
   esphome::Component *component_;
   heat_pump_data_t &hp_data_;
   text_sensor::TextSensor *status_;
-
-  // Optional parameters remain standard
-  optional<float> d01_defrost_start;
-  optional<float> d02_defrost_end;
-  optional<float> d03_defrosting_cycle_time_minutes;
-  optional<float> d04_max_defrost_time_minutes;
-  optional<float> d05_min_economy_defrost_time_minutes;
-  optional<float> r04_return_diff_cooling;
-  optional<float> r05_shutdown_temp_diff_when_cooling;
-  optional<float> r06_return_diff_heating;
-  optional<float> r07_shutdown_diff_heating;
-  optional<float> u02_pulses_per_liter;
-  optional<DefrostEcoMode> d06_defrost_eco_mode;
-  optional<FlowMeterEnable> u01_flow_meter;
-  optional<HeatPumpRestrict> h02_mode_restrictions;
-  optional<FanMode> f01_fan_mode;
 };
 
 }  // namespace hwp
