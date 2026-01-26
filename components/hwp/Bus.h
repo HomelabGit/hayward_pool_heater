@@ -56,6 +56,9 @@
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 
+#include "driver/rmt_tx.h"
+#include "driver/rmt_rx.h"
+
 // Uncomment the line below to enable debugging the bus pulses
 #define PULSE_DEBUG
 
@@ -225,12 +228,16 @@ class Bus {
     SpinLockQueue<std::shared_ptr<BaseFrame>> received_frames; ///< Queue for received frames.
     SpinLockQueue<std::shared_ptr<BaseFrame>>
         tx_packets_queue; ///< Queue for frames to be transmitted.
-    rmt_tx_channel_handle_t tx_channel_{nullptr};
+   
+    rmt_channel_handle_t tx_channel_{nullptr};
+    rmt_channel_handle_t rx_channel_{nullptr};
+    
     RingbufHandle_t rb_;
 #ifdef PULSE_DEBUG
     std::vector<std::string> pulse_strings_; // Vector to store formatted pulse strings
 #endif
     uint64_t last_change_us_;
+    
     volatile rmt_symbol_word_t current_pulse_;
 
     inline uint64_t elapsed(uint64_t now) {
