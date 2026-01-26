@@ -178,6 +178,7 @@ def create_throttle_avg_filter(sensor_name):
         ]
     }
 
+# 1. Define Template and Constants FIRST
 INPUT_TYPES_TEMPLATE = {
     CONF_NUMBER: {
         "schema": number.number_schema,
@@ -193,24 +194,26 @@ INPUT_TYPES_TEMPLATE = {
     },
 }
 
+# 2. Define the source data dictionaries
+# Ensure these exist before the loops below run
+SENSORS = getattr(locals(), 'SENSORS', {}) 
+INPUTS = getattr(locals(), 'INPUTS', {})
+
+# 3. Build Sub-Schemas
 SENSORS_SCHEMA = cv.Schema(
     {
         cv.Optional(
             sensor_designator,
             default={
-                "disabled_by_default": False, # Fixed: must be boolean
+                "disabled_by_default": False,
                 **(filter_creation(sensor_designator) if filter_creation else {}),
             },
         ): sensor_schema
-        for sensor_designator, (
-            sensor_name,
-            sensor_schema,
-            _,
-            filter_creation,
-        ) in SENSORS.items()
+        for sensor_designator, (sensor_name, sensor_schema, _, filter_creation) in SENSORS.items()
     }
 )
 
+# Process INPUTS and build INPUTS_SCHEMA
 for sensor_designator, (sensor_name, schema_name, schema_options, register_options) in INPUTS.items():
     schema_registry = INPUT_TYPES_TEMPLATE[schema_name]
     schema_options["class_"] = hwp_ns.class_(
@@ -229,6 +232,7 @@ INPUTS_SCHEMA = cv.Schema(
     }
 )
 
+# 4. Define the Main CONFIG_SCHEMA
 CONFIG_SCHEMA = (
     climate.climate_schema(PoolHeater)
     .extend(
@@ -253,7 +257,7 @@ CONFIG_SCHEMA = (
                 entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
                 icon="mdi:code-tags",
             ),
-            # Updated to 2026 validator
+            # Mandatory 2026 validator
             cv.Optional(CONF_UPDATE_INTERVAL): cv.update_interval,
             cv.Optional(CONF_SENSORS, default={}): SENSORS_SCHEMA,
             cv.Optional(CONF_INPUT, default={}): INPUTS_SCHEMA,
@@ -261,24 +265,6 @@ CONFIG_SCHEMA = (
     )
     .extend(cv.COMPONENT_SCHEMA)
 )
-
-INPUT_TYPES_TEMPLATE = dict[str, dict](
-    {
-        CONF_NUMBER: {
-            "schema": number.number_schema,
-            "registration_function": number.register_number,
-            "class_": number.Number,
-            "suffix": CONF_NUMBER,
-        },
-        "select": {
-            "schema": select.select_schema,
-            "registration_function": select.register_select,
-            "class_": select.Select,
-            "suffix": "select",
-        },
-    }
-)
-
 
 INPUTS = dict[str, tuple[cv.Schema, callable]](
     {
