@@ -44,13 +44,8 @@
 namespace esphome {
 namespace hwp {
 
-/**
- * 2026 Forward Declarations
- * These must match the EXACT declaration type in Schema.h to avoid 
- * 'referred to as enum' or 'typedef-name' errors.
- */
 using heat_pump_data_t = heat_pump_data_t; 
-// These are defined as CLASSES in your Schema.h, not enums.
+
 class DefrostEcoMode;
 class FlowMeterEnable;
 class HeatPumpRestrict;
