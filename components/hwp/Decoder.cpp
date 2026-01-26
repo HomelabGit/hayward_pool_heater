@@ -144,7 +144,7 @@ void Decoder::start_new_frame() {
  * We check the .level to determine if it's High or Low.
  */
 int32_t Decoder::get_high_duration(const rmt_symbol_word_t* item) {
-    return (item->level) ? (int32_t)item->duration : 0;
+    return (item->level0) ? (int32_t)item->duration0 : 0;
 }
 
 uint32_t Decoder::get_low_duration(const rmt_symbol_word_t* item) {
