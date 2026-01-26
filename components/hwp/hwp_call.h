@@ -39,34 +39,33 @@
 #include "esphome/core/helpers.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/text_sensor/text_sensor.h"
-// No longer relying on implicit includes for 2026
 #include <optional> 
 
 namespace esphome {
 namespace hwp {
 
-// FIX: Forward declaration of the actual struct. 
-// Do not use 'struct' if it was defined as a typedef in Schema.h.
-// Assuming your Schema.h defines it as 'struct heat_pump_data_t { ... };'
+/**
+ * 2026 Forward Declarations
+ * These must match the EXACT declaration type in Schema.h to avoid 
+ * 'referred to as enum' or 'typedef-name' errors.
+ */
 struct heat_pump_data_t; 
 
-enum class DefrostEcoMode : uint8_t;
-enum class FlowMeterEnable : uint8_t;
-enum class HeatPumpRestrict : uint8_t;
-enum class FanMode : uint8_t;
+// These are defined as CLASSES in your Schema.h, not enums.
+class DefrostEcoMode;
+class FlowMeterEnable;
+class HeatPumpRestrict;
+class FanMode;
 
 class HWPCall : public climate::ClimateCall {
  public:
-  // 2026 Compliance: Use 'explicit' for constructors taking multiple components 
-  // to prevent ambiguous type conversions in the new toolchain.
   explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
           text_sensor::TextSensor *status)
       : climate::ClimateCall(parent), component_(component), hp_data_(hp_data), status_(status) {}
 
-  // 2026 Climate API: The 'perform' method is now the primary entry point
-  void perform() override; 
+  void perform(); 
 
-  // Modern C++ standard: Use 'optional' with 'esphome::' prefix for clarity
+  // Use esphome::optional for 2026 toolchain stability
   esphome::optional<float> d01_defrost_start;
   esphome::optional<float> d02_defrost_end;
   esphome::optional<float> d03_defrosting_cycle_time_minutes;
@@ -77,10 +76,12 @@ class HWPCall : public climate::ClimateCall {
   esphome::optional<float> r06_return_diff_heating;
   esphome::optional<float> r07_shutdown_diff_heating;
   esphome::optional<float> u02_pulses_per_liter;
-  esphome::optional<DefrostEcoMode> d06_defrost_eco_mode;
-  esphome::optional<FlowMeterEnable> u01_flow_meter;
-  esphome::optional<HeatPumpRestrict> h02_mode_restrictions;
-  esphome::optional<FanMode> f01_fan_mode;
+  
+  // These must match the class forward declarations above
+  esphome::optional<DefrostEcoMode*> d06_defrost_eco_mode;
+  esphome::optional<FlowMeterEnable*> u01_flow_meter;
+  esphome::optional<HeatPumpRestrict*> h02_mode_restrictions;
+  esphome::optional<FanMode*> f01_fan_mode;
 
  protected:
   esphome::Component *component_;
