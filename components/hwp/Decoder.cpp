@@ -148,7 +148,7 @@ int32_t Decoder::get_high_duration(const rmt_symbol_word_t* item) {
 }
 
 uint32_t Decoder::get_low_duration(const rmt_symbol_word_t* item) {
-    return (!item->level) ? (uint32_t)item->duration : 0;
+    return (!item->level0) ? (uint32_t)item->duration0 : 0;
 }
 
 bool Decoder::matches_duration(uint32_t target_us, uint32_t actual_us) {
@@ -158,13 +158,15 @@ bool Decoder::matches_duration(uint32_t target_us, uint32_t actual_us) {
 
 bool Decoder::is_start_frame(const rmt_symbol_word_t* item) {
     // 2026: Check high level and duration in one symbol
-    return item->level && matches_duration(frame_heading_high_duration_ms * 1000, item->duration);
+    return item->level0 && matches_duration(frame_heading_high_duration_ms * 1000, item->duration0);
+
 }
 
 bool Decoder::is_long_bit(const rmt_symbol_word_t* item) {
     // In 2026 single-symbol mode, this checks if THIS pulse is a long high bit.
     // Logic for paired low pulse should be handled in the calling loop.
-    return item->level && matches_duration(bit_long_high_duration_ms * 1000, item->duration);
+    return item->level0 && matches_duration(bit_long_high_duration_ms * 1000, item->duration0);
+
 }
 
 bool Decoder::is_short_bit(const rmt_symbol_word_t* item) {
