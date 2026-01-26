@@ -179,7 +179,7 @@ def create_throttle_avg_filter(sensor_name):
     }
 
 # Updated for ESPHome 2025.11.0+ standards
-BASE_SCHEMA = climate.climate_schema(PoolHeater).extend(
+CONFIG_SCHEMA = climate.climate_schema(PoolHeater).extend(
     {
         # CONF_ID is now handled by climate_schema(PoolHeater), 
         # but you can keep it here if you need a specific declaration
