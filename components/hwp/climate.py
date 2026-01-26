@@ -587,58 +587,103 @@ SENSORS = dict[str, tuple[str, cv.Schema, callable]](
     }
 )
 
-
-
-@coroutine
 async def to_code(config):
-
+    # Setup pin and main component
     pin_component = await cg.gpio_pin_expression(config[CONF_GPIO_NETPIN])
-    # max_buffer_count = config[CONF_MAX_BUFFER_COUNT]
     heater_component = cg.new_Pvariable(config[CONF_ID], pin_component)
 
     await cg.register_component(heater_component, config)
     await climate.register_climate(heater_component, config)
 
-    # Sensors
-    for sensor_designator, (_, _, registration_function, _) in SENSORS.items():
-        sensor_conf = config[CONF_SENSORS][sensor_designator]
-        sensor_component = cg.new_Pvariable(sensor_conf[CONF_ID])
-        await registration_function(sensor_component, sensor_conf)
-        cg.add(
-            getattr(heater_component, f"set_{sensor_designator}_sensor")(
-                sensor_component
-            )
-        )
+    # 2026 Safe Sensor Registration
+    if CONF_SENSORS in config:
+        sensors_config = config[CONF_SENSORS]
+        for sensor_designator, (_, _, registration_function, _) in SENSORS.items():
+            # Only process if this specific sensor is in the YAML config
+            if sensor_designator in sensors_config:
+                sensor_conf = sensors_config[sensor_designator]
+                sensor_component = cg.new_Pvariable(sensor_conf[CONF_ID])
+                
+                # Register the sensor using its type-specific function
+                await registration_function(sensor_component, sensor_conf)
+                
+                # Attach to the main heater component
+                cg.add(
+                    getattr(heater_component, f"set_{sensor_designator}_sensor")(
+                        sensor_component
+                    )
+                )
 
-    # Generate the code for all inputs and register them
-    for sensor_designator, (
-        _,
-        schema_name,
-        _,
-        register_options,
-    ) in INPUTS.items():
-        if sensor_designator not in config[CONF_INPUT]:
-            continue
-        input_conf = config[CONF_INPUT][sensor_designator]
-        input_component = cg.new_Pvariable(input_conf[CONF_ID])
-        registration_function = INPUT_TYPES_TEMPLATE[schema_name]["registration_function"]
-        await registration_function(input_component, input_conf, **register_options)
-        await cg.register_parented(input_component, heater_component)
-        cg.add(
-            getattr(heater_component, f"set_{sensor_designator}_sensor")(
-                input_component
-            )
-        )
+
+async def to_code(config):
+    # Setup main component
+    pin_component = await cg.gpio_pin_expression(config[CONF_GPIO_NETPIN])
+    heater_component = cg.new_Pvariable(config[CONF_ID], pin_component)
+
+    await cg.register_component(heater_component, config)
+    await climate.register_climate(heater_component, config)
+
+    # 1. COMPLIANT SENSOR REGISTRATION
+    # Check if any sensors are configured at all
+    if CONF_SENSORS in config:
+        sensors_config = config[CONF_SENSORS]
+        for sensor_designator, (_, _, registration_function, _) in SENSORS.items():
+            # Check if this specific optional sensor exists in the config
+            if sensor_designator in sensors_config:
+                sensor_conf = sensors_config[sensor_designator]
+                sensor_component = cg.new_Pvariable(sensor_conf[CONF_ID])
+                
+                # Standard 2026 registration call
+                await registration_function(sensor_component, sensor_conf)
+                
+                # Attach to heater component
+                cg.add(
+                    getattr(heater_component, f"set_{sensor_designator}_sensor")(
+                        sensor_component
+                    )
+                )
+
+    # 2. COMPLIANT INPUT REGISTRATION
+    # Check if any inputs are configured
+    if CONF_INPUT in config:
+        inputs_config = config[CONF_INPUT]
+        for sensor_designator, (_, schema_name, _, register_options) in INPUTS.items():
+            if sensor_designator in inputs_config:
+                input_conf = inputs_config[sensor_designator]
+                input_component = cg.new_Pvariable(input_conf[CONF_ID])
+                
+                # Retrieve registration function from template
+                registration_function = INPUT_TYPES_TEMPLATE[schema_name]["registration_function"]
+                
+                # Register input with standard parented link
+                await registration_function(input_component, input_conf, **register_options)
+                await cg.register_parented(input_component, heater_component)
+                
+                cg.add(
+                    getattr(heater_component, f"set_{sensor_designator}_sensor")(
+                        input_component
+                    )
+                )
+
+# Compliant 2026 registration: redundant register_component removed
     # Debug Settings
-    if am_switch_conf := config.get(CONF_ACTIVE_MODE_SWITCH):
-        switch_component = await switch.new_switch(am_switch_conf)
-        await cg.register_component(switch_component, am_switch_conf)
-        await cg.register_parented(switch_component, heater_component)
-    if us_switch_conf := config.get(CONF_UPDATE_SENSORS_SWITCH):
-        us_switch_component = await switch.new_switch(us_switch_conf)
-        await cg.register_component(us_switch_component, us_switch_conf)
-        await cg.register_parented(us_switch_component, heater_component)
-    if generate_code_conf := config.get(CONF_GENERATE_CODE_BUTTON):
-        button_component = await button.new_button(generate_code_conf)
-        await cg.register_component(button_component, generate_code_conf)
-        await cg.register_parented(button_component, heater_component)
+
+if am_switch_conf := config.get(CONF_ACTIVE_MODE_SWITCH):
+    switch_component = await switch.new_switch(am_switch_conf)
+    # register_component is usually redundant for switch.new_switch
+    #await cg.register_component(switch_component, am_switch_conf)
+    await cg.register_parented(switch_component, heater_component)
+
+if us_switch_conf := config.get(CONF_UPDATE_SENSORS_SWITCH):
+    us_switch_component = await switch.new_switch(us_switch_conf)
+    #        await cg.register_component(us_switch_component, us_switch_conf)
+    await cg.register_parented(us_switch_component, heater_component)
+
+if generate_code_conf := config.get(CONF_GENERATE_CODE_BUTTON):
+    button_component = await button.new_button(generate_code_conf)
+    # register_component is usually redundant for button.new_button
+    #  await cg.register_component(button_component, generate_code_conf)
+    await cg.register_parented(button_component, heater_component)
+
+    
+  
