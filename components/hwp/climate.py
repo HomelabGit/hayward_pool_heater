@@ -178,13 +178,19 @@ def create_throttle_avg_filter(sensor_name):
         ]
     }
 
-
-BASE_SCHEMA = Climate.climate_schema(PoolHeater).extend(
+# Updated for ESPHome 2025.11.0+ standards
+BASE_SCHEMA = climate.climate_schema(PoolHeater).extend(
     {
-        cv.GenerateID(CONF_ID): cv.declare_id(PoolHeater),
+        # CONF_ID is now handled by climate_schema(PoolHeater), 
+        # but you can keep it here if you need a specific declaration
+        cv.GenerateID(): cv.declare_id(PoolHeater),
+        
         cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
             {CONF_OUTPUT: True, CONF_INPUT: True}
         ),
+        
+        # Note: CONF_NAME is usually handled by the base climate_schema,
+        # but kept here if you are overriding standard behavior.
         cv.Optional(CONF_NAME, default="Pool Heater"): cv.Any(
             cv.All(
                 cv.none,
@@ -194,6 +200,7 @@ BASE_SCHEMA = Climate.climate_schema(PoolHeater).extend(
             ),
             cv.string,
         ),
+        
         cv.Optional(
             CONF_ACTIVE_MODE_SWITCH, default={"name": "Active Mode"}
         ): switch.switch_schema(
@@ -202,6 +209,7 @@ BASE_SCHEMA = Climate.climate_schema(PoolHeater).extend(
             default_restore_mode="RESTORE_DEFAULT_OFF",
             icon="mdi:upload-network",
         ),
+        
         cv.Optional(
             CONF_UPDATE_SENSORS_SWITCH, default={"name": "Update Sensors"}
         ): switch.switch_schema(
@@ -210,6 +218,7 @@ BASE_SCHEMA = Climate.climate_schema(PoolHeater).extend(
             default_restore_mode="RESTORE_DEFAULT_OFF",
             icon="mdi:upload-network",
         ),
+        
         cv.Optional(
             CONF_GENERATE_CODE_BUTTON, default={"name": "Generate Code"}
         ): button.button_schema(
@@ -217,12 +226,14 @@ BASE_SCHEMA = Climate.climate_schema(PoolHeater).extend(
             entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
             icon="mdi:code-tags",
         ),
+        
         cv.Optional(CONF_UPDATE_INTERVAL, default="30s"): cv.All(
             cv.positive_time_period_milliseconds,
             cv.Range(min=core.TimePeriod(seconds=10), max=core.TimePeriod(seconds=1800)),
         ),
     }
-)
+).extend(cv.COMPONENT_SCHEMA) # Recommended to ensure standard component options
+
 INPUT_TYPES_TEMPLATE = dict[str, dict](
     {
         CONF_NUMBER: {
