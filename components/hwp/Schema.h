@@ -305,10 +305,10 @@ class FanMode {
             climate::CLIMATE_FAN_LOW, 
             climate::CLIMATE_FAN_HIGH
         };
-        traits.set_supported_fan_modes(standard_fan_modes);
-        traits.add_supported_custom_fan_mode(scheduled_desc);
-        traits.add_supported_custom_fan_mode(ambient_desc);
-        traits.add_supported_custom_fan_mode(ambient_scheduled_desc);
+        traits.set_supported_fan_modes({standard_fan_modes});
+        traits.add_supported_custom_fan_modes({scheduled_desc});
+        traits.add_supported_custom_fan_modes({ambient_desc});
+        traits.add_supported_custom_fan_modes({ambient_scheduled_desc});
     }
 
   private:
