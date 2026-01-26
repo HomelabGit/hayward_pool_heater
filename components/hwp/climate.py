@@ -178,13 +178,27 @@ def create_throttle_avg_filter(sensor_name):
         ]
     }
 
-SENSORS_SCHEMA = cv.All(
+INPUT_TYPES_TEMPLATE = {
+    CONF_NUMBER: {
+        "schema": number.number_schema,
+        "registration_function": number.register_number,
+        "class_": number.Number,
+        "suffix": CONF_NUMBER,
+    },
+    "select": {
+        "schema": select.select_schema,
+        "registration_function": select.register_select,
+        "class_": select.Select,
+        "suffix": "select",
+    },
+}
+
+SENSORS_SCHEMA = cv.Schema(
     {
         cv.Optional(
             sensor_designator,
             default={
-                "name": f"{sensor_name}",
-                "disabled_by_default": "false",
+                "disabled_by_default": False, # Fixed: must be boolean
                 **(filter_creation(sensor_designator) if filter_creation else {}),
             },
         ): sensor_schema
@@ -197,93 +211,56 @@ SENSORS_SCHEMA = cv.All(
     }
 )
 
-# for each inputs item in the list, declare the associated class name in the 
-# heat pump name space and update the list
-for sensor_designator, (
-    sensor_name,
-    schema_name,
-    schema_options,
-    register_options,
-) in INPUTS.items():
+for sensor_designator, (sensor_name, schema_name, schema_options, register_options) in INPUTS.items():
     schema_registry = INPUT_TYPES_TEMPLATE[schema_name]
-    schema_options["class_"] = (
-        hwp_ns.class_(
-            f'{sensor_designator}_{schema_registry["suffix"]}',
-            schema_registry["class_"],
-        )
-        if len(schema_registry["suffix"]) > 0
-        else schema_registry["class_"]
-    )
+    schema_options["class_"] = hwp_ns.class_(
+        f'{sensor_designator}_{schema_registry["suffix"]}',
+        schema_registry["class_"],
+    ) if schema_registry["suffix"] else schema_registry["class_"]
     schema_options["entity_category"] = ENTITY_CATEGORY_CONFIG
-    INPUTS[sensor_designator] = (
-        sensor_name,
-        schema_name,
-        schema_options,
-        register_options,
-    )
+    INPUTS[sensor_designator] = (sensor_name, schema_name, schema_options, register_options)
 
-# create the overall input schema from all the inputs, each with its schema type, 
-# assigning the name and passing schema creation options when specified
-INPUTS_SCHEMA = cv.All(
+INPUTS_SCHEMA = cv.Schema(
     {
-        cv.Optional(sensor_designator, default={"name": f"{sensor_name}"}): INPUT_TYPES_TEMPLATE[
+        cv.Optional(sensor_designator, default={}): INPUT_TYPES_TEMPLATE[
             schema_name
         ]["schema"](**schema_options)
-        for sensor_designator, (
-            sensor_name,
-            schema_name,
-            schema_options,
-            _,
-        ) in INPUTS.items()
+        for sensor_designator, (sensor_name, schema_name, schema_options, _) in INPUTS.items()
     }
 )
 
-
-# Updated for ESPHome 2025.11.0+ standards
 CONFIG_SCHEMA = (
-    climate.climate_schema(PoolHeater).
-    extend(
-    {
-        
-        cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
-            {CONF_OUTPUT: True, CONF_INPUT: True}
-        ),
-    
-        cv.Optional(
-            CONF_ACTIVE_MODE_SWITCH, default={"name": "Active Mode"}
-        ): switch.switch_schema(
-            ActiveModeSwitch,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-            default_restore_mode="RESTORE_DEFAULT_OFF",
-            icon="mdi:upload-network",
-        ),
-        
-        cv.Optional(
-            CONF_UPDATE_SENSORS_SWITCH, default={"name": "Update Sensors"}
-        ): switch.switch_schema(
-            UpdateStatusSwitch,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-            default_restore_mode="RESTORE_DEFAULT_OFF",
-            icon="mdi:upload-network",
-        ),
-        
-        cv.Optional(
-            CONF_GENERATE_CODE_BUTTON, default={"name": "Generate Code"}
-        ): button.button_schema(
-            GenerateCodeButton,
-            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            icon="mdi:code-tags",
-        ),
-        
-        cv.Optional(CONF_UPDATE_INTERVAL, default="30s"): cv.All(
-            cv.positive_time_period_milliseconds,
-            cv.Range(min=core.TimePeriod(seconds=10), max=core.TimePeriod(seconds=1800)),
-        ),
-        cv.Optional(CONF_SENSORS, default={}): SENSORS_SCHEMA,
-        cv.Optional(CONF_INPUT, default={}): INPUTS_SCHEMA,
-    }
-    ).extend(cv.COMPONENT_SCHEMA) 
-)# Recommended to ensure standard component options
+    climate.climate_schema(PoolHeater)
+    .extend(
+        {
+            cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
+                {CONF_OUTPUT: True, CONF_INPUT: True}
+            ),
+            cv.Optional(CONF_ACTIVE_MODE_SWITCH): switch.switch_schema(
+                ActiveModeSwitch,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+                default_restore_mode="RESTORE_DEFAULT_OFF",
+                icon="mdi:upload-network",
+            ),
+            cv.Optional(CONF_UPDATE_SENSORS_SWITCH): switch.switch_schema(
+                UpdateStatusSwitch,
+                entity_category=ENTITY_CATEGORY_CONFIG,
+                default_restore_mode="RESTORE_DEFAULT_OFF",
+                icon="mdi:upload-network",
+            ),
+            cv.Optional(CONF_GENERATE_CODE_BUTTON): button.button_schema(
+                GenerateCodeButton,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+                icon="mdi:code-tags",
+            ),
+            # Updated to 2026 validator
+            cv.Optional(CONF_UPDATE_INTERVAL): cv.update_interval,
+            cv.Optional(CONF_SENSORS, default={}): SENSORS_SCHEMA,
+            cv.Optional(CONF_INPUT, default={}): INPUTS_SCHEMA,
+        }
+    )
+    .extend(cv.COMPONENT_SCHEMA)
+)
 
 INPUT_TYPES_TEMPLATE = dict[str, dict](
     {
