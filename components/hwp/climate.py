@@ -179,7 +179,9 @@ def create_throttle_avg_filter(sensor_name):
     }
 
 # Updated for ESPHome 2025.11.0+ standards
-CONFIG_SCHEMA = climate.climate_schema(PoolHeater).extend(
+CONFIG_SCHEMA = (
+    climate.climate_schema(PoolHeater).
+    extend(
     {
         
         cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
@@ -217,7 +219,8 @@ CONFIG_SCHEMA = climate.climate_schema(PoolHeater).extend(
             cv.Range(min=core.TimePeriod(seconds=10), max=core.TimePeriod(seconds=1800)),
         ),
     }
-).extend(cv.COMPONENT_SCHEMA) # Recommended to ensure standard component options
+    ).extend(cv.COMPONENT_SCHEMA) 
+)# Recommended to ensure standard component options
 
 INPUT_TYPES_TEMPLATE = dict[str, dict](
     {
