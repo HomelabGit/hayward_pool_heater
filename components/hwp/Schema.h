@@ -299,17 +299,21 @@ class FanMode {
      *
      * @param traits A reference to the ClimateTraits object to modify.
      */
-    void set_supported_fan_modes(climate::ClimateTraits& traits) {
-        // 2026 compliant: Use ClimateFanModeMask instead of initializer list
-        const climate::ClimateFanModeMask standard_fan_modes = {
-            climate::CLIMATE_FAN_LOW, 
-            climate::CLIMATE_FAN_HIGH
-        };
-        traits.set_supported_fan_modes({standard_fan_modes});
-        traits.add_supported_custom_fan_modes({scheduled_desc});
-        traits.add_supported_custom_fan_modes({ambient_desc});
-        traits.add_supported_custom_fan_modes({ambient_scheduled_desc});
-    }
+
+void set_supported_fan_modes(climate::ClimateTraits& traits) {
+    // 1. Correct assignment for standard fan modes
+    // ClimateFanModeMask is a set; do not wrap it in another { } when passing to the setter
+    const climate::ClimateFanModeMask standard_fan_modes = {
+        climate::CLIMATE_FAN_LOW, 
+        climate::CLIMATE_FAN_HIGH
+    };
+    traits.set_supported_fan_modes(standard_fan_modes);
+    traits.set_supported_custom_fan_modes({
+        scheduled_desc, 
+        ambient_desc, 
+        ambient_scheduled_desc
+    });
+}
 
   private:
     Value value_;
