@@ -68,7 +68,7 @@ void Bus::setup() {
     this->current_frame.reset("From setup");
     start_receive();
 }
-void IRAM_ATTR Bus::process_pulse(rmt_item32_t* item) {
+void IRAM_ATTR Bus::process_pulse(rmt_symbol_word_t* item) {
     if (!item) return;
     this->log_pulse_item(item);
     if (Decoder::is_start_frame(item)) {
@@ -148,7 +148,7 @@ void Bus::start_receive() {
         // reset the change detection to what's now on the bus
 
         if (this->RxTaskHandle == nullptr) {
-            size_t ring_buf_size = 12 * frame_data_length * (8 + 2) * sizeof(rmt_item32_t);
+            size_t ring_buf_size = 12 * frame_data_length * (8 + 2) * sizeof(rmt_symbol_word_t);
             this->rb_ = xRingbufferCreate(ring_buf_size, RINGBUF_TYPE_NOSPLIT);
             ESP_LOGD(TAG_BUS, "Created ring buffer with size %u (frame data length %u)",
                 ring_buf_size, frame_data_length);
@@ -328,11 +328,11 @@ void Bus::RxTask(void* arg) {
     instance->mode = BUSMODE_RX;
 
     while (true) {
-        rmt_item32_t* items =
-            (rmt_item32_t*)xRingbufferReceive(instance->rb_, &rx_size, 120 * portTICK_PERIOD_MS);
+        rmt_symbol_word_t* items =
+            (rmt_symbol_word_t*)xRingbufferReceive(instance->rb_, &rx_size, 120 * portTICK_PERIOD_MS);
 
         if (items && rx_size > 0) {
-            size_t count = static_cast<size_t>(rx_size / sizeof(rmt_item32_t));
+            size_t count = static_cast<size_t>(rx_size / sizeof(rmt_symbol_word_t));
             if (instance->mode == BUSMODE_RX) {
                 instance->current_frame.passes_count++;
 
@@ -356,7 +356,7 @@ void Bus::RxTask(void* arg) {
             if (instance->mode == BUSMODE_RX && instance->current_frame.is_started() &&
                 instance->current_pulse_.duration0 > 0 &&
                 instance->elapsed(esp_timer_get_time()) > (frame_end_threshold_ms * 1000)) {
-                rmt_item32_t pulse;
+                rmt_symbol_word_t pulse;
                 memcpy((void*)&pulse, (void*)&instance->current_pulse_,
                     sizeof(instance->current_pulse_));
                 memset((void*)&instance->current_pulse_, 0, sizeof(instance->current_pulse_));
