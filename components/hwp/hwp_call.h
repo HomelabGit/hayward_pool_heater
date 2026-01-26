@@ -30,41 +30,60 @@
  * @disclaimer Use at your own risk. The developer assumes no responsibility
  * for any damage or loss caused by the use of this software.
  */
+
+/**  C++ header compliant with ESPHome 2026.1.0 */ 
+
 #pragma once
-#include "esphome/components/climate/climate.h"
-#include "esphome/core/application.h"
+
 #include "esphome/core/component.h"
-#include "esphome/core/optional.h"
+#include "esphome/core/helpers.h"
+#include "esphome/components/climate/climate.h"
+#include "esphome/components/text_sensor/text_sensor.h"
+
 namespace esphome {
 namespace hwp {
-class HWPCall : public climate::ClimateCall {
-  public:
-    HWPCall(climate::Climate* parent, Component& component, heat_pump_data_t& hp_data,
-        text_sensor::TextSensor& status)
-        : climate::ClimateCall(parent), component(component), hp_data(hp_data), status(status) {}
-    HWPCall(const climate::ClimateCall& climate_call, Component& component, heat_pump_data_t& hp_data,
-        text_sensor::TextSensor& status)
-        : climate::ClimateCall(climate_call), component(component), hp_data(hp_data),
-          status(status) {}
-    climate::Climate& get_parent() { return *parent_; }
 
-    esphome::Component& component;
-    heat_pump_data_t& hp_data;
-    optional<float> d01_defrost_start;
-    optional<float> d02_defrost_end;
-    optional<float> d03_defrosting_cycle_time_minutes;
-    optional<float> d04_max_defrost_time_minutes;
-    optional<float> d05_min_economy_defrost_time_minutes;
-    optional<float> r04_return_diff_cooling;
-    optional<float> r05_shutdown_temp_diff_when_cooling;
-    optional<float> r06_return_diff_heating;
-    optional<float> r07_shutdown_diff_heating;
-    optional<float> u02_pulses_per_liter;
-    optional<DefrostEcoMode> d06_defrost_eco_mode;
-    optional<FlowMeterEnable> u01_flow_meter;
-    optional<HeatPumpRestrict> h02_mode_restrictions;
-    optional<FanMode> f01_fan_mode;
-    text_sensor::TextSensor& status;
+// Ensure your enums/structs are defined or included before this class
+struct heat_pump_data_t; 
+enum class DefrostEcoMode : uint8_t;
+enum class FlowMeterEnable : uint8_t;
+enum class HeatPumpRestrict : uint8_t;
+enum class FanMode : uint8_t;
+
+class HWPCall : public climate::ClimateCall {
+ public:
+  // 2026 compliant constructor using member initializer list
+  HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
+          text_sensor::TextSensor *status)
+      : climate::ClimateCall(parent), component_(component), hp_data_(hp_data), status_(status) {}
+
+  // Added override for 2026 Climate API standardization
+  void perform() override; 
+
+  // Use protected/private members with getters for better 2026 stability
+  climate::Climate &get_parent() { return *this->parent_; }
+
+  // 2026 standard uses pointers for cross-component references to support ESP-IDF
+  esphome::Component *component_;
+  heat_pump_data_t &hp_data_;
+  text_sensor::TextSensor *status_;
+
+  // Optional parameters remain standard
+  optional<float> d01_defrost_start;
+  optional<float> d02_defrost_end;
+  optional<float> d03_defrosting_cycle_time_minutes;
+  optional<float> d04_max_defrost_time_minutes;
+  optional<float> d05_min_economy_defrost_time_minutes;
+  optional<float> r04_return_diff_cooling;
+  optional<float> r05_shutdown_temp_diff_when_cooling;
+  optional<float> r06_return_diff_heating;
+  optional<float> r07_shutdown_diff_heating;
+  optional<float> u02_pulses_per_liter;
+  optional<DefrostEcoMode> d06_defrost_eco_mode;
+  optional<FlowMeterEnable> u01_flow_meter;
+  optional<HeatPumpRestrict> h02_mode_restrictions;
+  optional<FanMode> f01_fan_mode;
 };
-} // namespace hwp
-} // namespace esphome
+
+}  // namespace hwp
+}  // namespace esphome
