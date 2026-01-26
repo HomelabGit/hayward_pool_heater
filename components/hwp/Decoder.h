@@ -29,15 +29,19 @@
  * for any damage or loss caused by the use of this software.
  */
 
+/* 2026 Compliant */
+
 #pragma once
 #include <cstring>
+#include <memory>
 #include "esphome/core/log.h"
 #include "base_frame.h"
-
+#include "driver/rmt_rx.h" // Mandatory for rmt_symbol_word_t in 2026
 
 namespace esphome {
   namespace hwp {
     static constexpr char TAG_DECODING[] = "hwp.decoding";
+
     class Decoder : public BaseFrame {
     public:
       Decoder();
@@ -49,20 +53,25 @@ namespace esphome {
       bool is_valid() const;
       void append_bit(bool long_duration);
       void start_new_frame();
-      static int32_t get_high_duration(const rmt_item32_t* item);
-      static uint32_t get_low_duration(const rmt_item32_t* item);
+
+      // 2026 Updates: Changed rmt_item32_t to rmt_symbol_word_t
+      static int32_t get_high_duration(const rmt_symbol_word_t* item);
+      static uint32_t get_low_duration(const rmt_symbol_word_t* item);
       static bool matches_duration(uint32_t target_us, uint32_t actual_us);
-      static bool is_start_frame(const rmt_item32_t* item);
-      static bool is_long_bit(const rmt_item32_t* item);
-      static bool is_short_bit(const rmt_item32_t* item);
-      static bool is_frame_end(const rmt_item32_t* item);
+      static bool is_start_frame(const rmt_symbol_word_t* item);
+      static bool is_long_bit(const rmt_symbol_word_t* item);
+      static bool is_short_bit(const rmt_symbol_word_t* item);
+      static bool is_frame_end(const rmt_symbol_word_t* item);
+
       bool is_started() const;
       void set_started(bool value);
       void debug(const char* msg = "");
       bool is_complete() const;
       void is_changed(const BaseFrame& frame);
+      
       uint32_t passes_count;
       bool is_finalized() const { return finalized; }
+
     private:
       uint8_t current_byte_value;
       uint8_t bit_current_index;
@@ -71,3 +80,4 @@ namespace esphome {
 
   }  // namespace hwp
 }  // namespace esphome
+
