@@ -32,6 +32,8 @@
  * for any damage or loss caused by the use of this software.
  */
 
+/* compliant with ESPHome 2026.1.0 */
+
 #pragma once
 
 #include "PoolHeater.h"
