@@ -301,8 +301,10 @@ class FanMode {
      */
     void set_supported_fan_modes(climate::ClimateTraits& traits) {
         // 2026 compliant: Use ClimateFanModeMask instead of initializer list
-        const climate::ClimateFanModeMask standard_fan_modes = 
-            climate::CLIMATE_FAN_LOW | climate::CLIMATE_FAN_HIGH;
+        const climate::ClimateFanModeMask standard_fan_modes = {
+            climate::CLIMATE_FAN_LOW, 
+            climate::CLIMATE_FAN_HIGH
+        };
         traits.set_supported_fan_modes(standard_fan_modes);
         traits.add_supported_custom_fan_mode(scheduled_desc);
         traits.add_supported_custom_fan_mode(ambient_desc);
