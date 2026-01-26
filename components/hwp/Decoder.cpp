@@ -171,13 +171,14 @@ bool Decoder::is_long_bit(const rmt_symbol_word_t* item) {
 
 bool Decoder::is_short_bit(const rmt_symbol_word_t* item) {
     // 2026: Access .duration directly. No union field required.
-    return (item->duration > 400 && item->duration < 600); 
+    return (item->duration0 > 400 && item->duration0 < 600);
+
 }
 
 bool Decoder::is_frame_end(const rmt_symbol_word_t* item) {
     // 2026: A duration of 0 or a threshold-matching low pulse indicates end.
-    return item->duration == 0 || 
-           (!item->level && matches_duration(frame_end_threshold_ms * 1000, item->duration));
+    return item->duration0 == 0 || 
+       (!item->level0 && matches_duration(frame_end_threshold_ms * 1000, item->duration0));
 }
 
 bool Decoder::is_started() const { return started; }
