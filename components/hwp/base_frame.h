@@ -41,7 +41,8 @@
 #include "hwp_call.h"
 #include <bitset>
 #include <cstring>
-#include <driver/rmt.h>
+#include "driver/rmt_tx.h" // For transmitting signals
+#include "driver/rmt_rx.h" // For receiving signals
 #include <iomanip>
 #include <memory>
 #include <stdint.h>
