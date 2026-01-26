@@ -232,7 +232,7 @@ class Bus {
     std::vector<std::string> pulse_strings_; // Vector to store formatted pulse strings
 #endif
     uint64_t last_change_us_;
-    volatile rmt_item32_t current_pulse_;
+    volatile rmt_symbol_word_t current_pulse_;
 
     inline uint64_t elapsed(uint64_t now) {
         if (now >= this->last_change_us_) {
@@ -328,10 +328,10 @@ class Bus {
         delayMicroseconds(ms * 1000);
     }
 
-    void process_pulse(rmt_item32_t* item);
+    void process_pulse(rmt_symbol_word_t* item);
     void finalize_frame(bool timeout);
 
-    std::string format_pulse_item(const rmt_item32_t* item) {
+    std::string format_pulse_item(const rmt_symbol_word_t* item) {
         if (item == nullptr) {
             return "";
         }
@@ -351,7 +351,7 @@ class Bus {
         // Store the result in the vector
         return oss.str();
     }
-    void log_pulse_item(const rmt_item32_t* item) {
+    void log_pulse_item(const rmt_symbol_word_t* item) {
 #ifdef PULSE_DEBUG
         if (item == nullptr) {
             return;
