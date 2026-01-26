@@ -31,8 +31,13 @@
  * @disclaimer Use at your own risk. The developer assumes no responsibility
  * for any damage or loss caused by the use of this software.
  */
+
 #pragma once
+
 #include "PoolHeater.h"
+#include "esphome/core/component.h"
+#include "esphome/core/helpers.h"
+#include "esphome/components/button/button.h"
 #include "esphome/components/number/number.h"
 #include "esphome/components/select/select.h"
 
@@ -41,116 +46,103 @@
 namespace esphome {
 namespace hwp {
 
-class GenerateCodeButton : public button::Button, public Parented<PoolHeater>, public Component {
-  protected:
-    void press_action() override;
-};
-class d01_defrost_start_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    d01_defrost_start_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-
-class d02_defrost_end_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    d02_defrost_end_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class d03_defrosting_cycle_time_minutes_number : public number::Number,
-                                                 public Parented<PoolHeater> {
-  public:
-    d03_defrosting_cycle_time_minutes_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class d04_max_defrost_time_minutes_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    d04_max_defrost_time_minutes_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class d05_min_economy_defrost_time_minutes_number : public number::Number,
-                                                    public Parented<PoolHeater> {
-  public:
-    d05_min_economy_defrost_time_minutes_number() = default;
-
-  protected:
-    void control(float value) override;
+// 2026 standard: Buttons must explicitly handle the Component lifecycle
+class GenerateCodeButton : public button::Button, public Component, public Parented<PoolHeater> {
+ public:
+  void press_action() override;
+  // 2026 Validation: Check parent before use
+  void setup() override {
+    if (this->parent_ == nullptr) {
+      this->mark_failed();
+    }
+  }
 };
 
-class r04_return_diff_cooling_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    r04_return_diff_cooling_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class r05_shutdown_temp_diff_when_cooling_number : public number::Number,
-                                                   public Parented<PoolHeater> {
-  public:
-    r05_shutdown_temp_diff_when_cooling_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class r06_return_diff_heating_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    r06_return_diff_heating_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class r07_shutdown_diff_heating_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    r07_shutdown_diff_heating_number() = default;
-
-  protected:
-    void control(float value) override;
+// Base class for numeric controls in 2026 to reduce binary size
+class PoolHeaterNumber : public number::Number, public Parented<PoolHeater> {
+ public:
+  PoolHeaterNumber() = default;
+ protected:
+  void control(float value) override = 0;
 };
 
-class u01_flow_meter_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    u01_flow_meter_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class u02_pulses_per_liter_number : public number::Number, public Parented<PoolHeater> {
-  public:
-    u02_pulses_per_liter_number() = default;
-
-  protected:
-    void control(float value) override;
-};
-class d06_defrost_eco_mode_select : public select::Select, public Parented<PoolHeater> {
-  public:
-    d06_defrost_eco_mode_select() = default;
-
-  protected:
-    void control(const std::string& value) override;
-};
-class u01_flow_meter_select : public select::Select, public Parented<PoolHeater> {
-  public:
-    u01_flow_meter_select() = default;
-
-  protected:
-    void control(const std::string& value) override;
+class d01_defrost_start_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
 };
 
-class h02_mode_restrictions_select : public select::Select, public Parented<PoolHeater> {
-  public:
-    h02_mode_restrictions_select() = default;
-
-  protected:
-    void control(const std::string& value) override;
+class d02_defrost_end_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
 };
 
+class d03_defrosting_cycle_time_minutes_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class d04_max_defrost_time_minutes_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class d05_min_economy_defrost_time_minutes_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class r04_return_diff_cooling_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class r05_shutdown_temp_diff_when_cooling_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class r06_return_diff_heating_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class r07_shutdown_diff_heating_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class u01_flow_meter_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+class u02_pulses_per_liter_number : public PoolHeaterNumber {
+ protected:
+  void control(float value) override;
+};
+
+// Base class for select controls in 2026
+class PoolHeaterSelect : public select::Select, public Parented<PoolHeater> {
+ public:
+  PoolHeaterSelect() = default;
+ protected:
+  void control(const std::string &value) override = 0;
+};
+
+class d06_defrost_eco_mode_select : public PoolHeaterSelect {
+ protected:
+  void control(const std::string &value) override;
+};
+
+class u01_flow_meter_select : public PoolHeaterSelect {
+ protected:
+  void control(const std::string &value) override;
+};
+
+class h02_mode_restrictions_select : public PoolHeaterSelect {
+ protected:
+  void control(const std::string &value) override;
+};
 
 } // namespace hwp
 } // namespace esphome
