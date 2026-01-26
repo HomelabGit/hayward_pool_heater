@@ -225,8 +225,7 @@ class Bus {
     SpinLockQueue<std::shared_ptr<BaseFrame>> received_frames; ///< Queue for received frames.
     SpinLockQueue<std::shared_ptr<BaseFrame>>
         tx_packets_queue; ///< Queue for frames to be transmitted.
-    rmt_config_t rmt_tx_config_;
-    rmt_config_t rmt_rx_config_;
+    rmt_tx_channel_handle_t tx_channel_{nullptr};
     RingbufHandle_t rb_;
 #ifdef PULSE_DEBUG
     std::vector<std::string> pulse_strings_; // Vector to store formatted pulse strings
