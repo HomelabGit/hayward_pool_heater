@@ -218,6 +218,8 @@ CONFIG_SCHEMA = (
             cv.positive_time_period_milliseconds,
             cv.Range(min=core.TimePeriod(seconds=10), max=core.TimePeriod(seconds=1800)),
         ),
+        cv.Optional(CONF_SENSORS, default={}): SENSORS_SCHEMA,
+        cv.Optional(CONF_INPUT, default={}): INPUTS_SCHEMA,
     }
     ).extend(cv.COMPONENT_SCHEMA) 
 )# Recommended to ensure standard component options
@@ -620,15 +622,6 @@ INPUTS_SCHEMA = cv.All(
         ) in INPUTS.items()
     }
 )
-
-# extend the base schema with the overall input schema and the sensor schema
-CONFIG_SCHEMA = BASE_SCHEMA.extend(
-    {
-        cv.Optional(CONF_SENSORS, default={}): SENSORS_SCHEMA,
-        cv.Optional(CONF_INPUT, default={}): INPUTS_SCHEMA,
-    }
-)
-
 
 @coroutine
 async def to_code(config):
