@@ -59,7 +59,7 @@ void PoolHeater::setup() {
     // Using App.get_compilation_time() means these will get reset each time the firmware is
     // updated, but this is an easy way to prevent wierd conflicts if e.g. select options change.
     preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
-        get_object_id_hash() ^ fnv1_hash(App.get_compilation_time()));
+        get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
     restore_preferences_();
     set_actual_status("Ready");
     this->status_set_warning("Waiting for heater state");
@@ -108,7 +108,7 @@ void PoolHeater::update() {
     }
     this->mode = this->hp_data_.mode.value_or(this->mode);
     if(this->hp_data_.fan_mode.has_value() ) {
-        this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
+        this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
         this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
     }
 
@@ -117,23 +117,35 @@ void PoolHeater::update() {
     //////////////////////////////////////////////
     // temperatures
     ESP_LOGVV(POOL_HEATER_TAG, "Setting suction temperature");
-    publish_sensor_value(this->hp_data_.t01_temperature_suction, this->t01_temperature_suction_);
+    //publish_sensor_value(this->hp_data_.t01_temperature_suction, this->t01_temperature_suction_);
+    publish_sensor_value(this->hp_data_.t01_temperature_suction, this->t01_temperature_suction_sensor);
+
     ESP_LOGVV(POOL_HEATER_TAG, "Setting outlet temperature");
-    publish_sensor_value(this->hp_data_.t03_temperature_outlet, this->t03_temperature_outlet_);
+    //publish_sensor_value(this->hp_data_.t03_temperature_outlet, this->t03_temperature_outlet_);
+    publish_sensor_value(this->hp_data_.t03_temperature_suction, this->t03_temperature_suction_sensor);
+
     ESP_LOGVV(POOL_HEATER_TAG, "Setting coil temperature");
-    publish_sensor_value(this->hp_data_.t04_temperature_coil, this->t04_temperature_coil_);
+   // publish_sensor_value(this->hp_data_.t04_temperature_coil, this->t04_temperature_coil_);
+    publish_sensor_value(this->hp_data_.t04_temperature_suction, this->t04_temperature_suction_sensor);
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting ambient temperature");
-    publish_sensor_value(this->hp_data_.t05_temperature_ambient, this->t05_temperature_ambient_);
+    //publish_sensor_value(this->hp_data_.t05_temperature_ambient, this->t05_temperature_ambient_);
+    publish_sensor_value(this->hp_data_.t05_temperature_suction, this->t05_temperature_suction_sensor);
 
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting exhaust temperature");
-    publish_sensor_value(this->hp_data_.t06_temperature_exhaust, this->t06_temperature_exhaust_);
+    //publish_sensor_value(this->hp_data_.t06_temperature_exhaust, this->t06_temperature_exhaust_);
+    publish_sensor_value(this->hp_data_.t06_temperature_suction, this->t06_temperature_suction_sensor);
+
     // defrost config
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost start");
-    publish_sensor_value(this->hp_data_.d01_defrost_start, this->d01_defrost_start_);
+    //publish_sensor_value(this->hp_data_.d01_defrost_start, this->d01_defrost_start_);
+    publish_sensor_value(this->hp_data_.d01_defrost_start, this->d01_defrost_start_sensor);
+
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost end");
-    publish_sensor_value(this->hp_data_.d02_defrost_end, this->d02_defrost_end_);
+    //publish_sensor_value(this->hp_data_.d02_defrost_end, this->d02_defrost_end_);
+    publish_sensor_value(this->hp_data_.d02_defrost_start, this->d02_defrost_start_sensor);
+
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost cycle time");
     publish_sensor_value(
         this->hp_data_.d03_defrosting_cycle_time_minutes, this->d03_defrosting_cycle_time_minutes_);
