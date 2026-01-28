@@ -115,7 +115,7 @@ optional<std::shared_ptr<BaseFrame>> FrameConf2::control(const HWPCall& call) {
     }
     if (!has_data) {
         ESP_LOGW(TAG, "Cannot control yet. Waiting for first heater fan mode packet");
-        call.component.status_momentary_warning("Waiting for initial heater fan mode packet", 5000);
+        call.component->status_momentary_warning("Waiting for initial heater fan mode packet", 5000);
         return nullopt;
     }
     fan_mode_frame.finalize();
