@@ -56,40 +56,43 @@ namespace hwp {
     static size_t class_type_id;                                                                   \
     DerivedFrameClass() : BaseFrame(), data_() {}                                                  \
     DerivedFrameClass(const BaseFrame& base) : BaseFrame(base), data_() {                          \
-        *this->data_ = base.packet;                                                                \
+        /* FIX 1: Use generic type_name and explicit reinterpret_cast */                           \
+        this->data_ = *reinterpret_cast<const type_name*>(&base.packet);                           \
     }                                                                                              \
     DerivedFrameClass(const DerivedFrameClass& other) : BaseFrame(other), data_(other.data_) {     \
-        this->prev_data_ = other.data_;                                                            \
+        this->prev_data_ = other.prev_data_;                                                       \
     }                                                                                              \
     template <size_t N>                                                                            \
     DerivedFrameClass(const unsigned char(&cmdTrame)[N]) : BaseFrame(cmdTrame) {                   \
-        data_ = *reinterpret_cast<const conditions_1*>(&this->packet);                             \
+        /* FIX 2: Use type_name instead of hard-coded conditions_1 */                              \
+        this->data_ = *reinterpret_cast<const type_name*>(&this->packet);                          \
     }                                                                                              \
     static std::shared_ptr<BaseFrame> create();                                                    \
     static bool matches(BaseFrame& specialized, BaseFrame& base);                                  \
     bool matches(BaseFrame& base) { return matches(*this, base); }                                 \
-    optional<type_name> data_;                                                                     \
-    optional<type_name> prev_data_;                                                                \
+    esphome::optional<type_name> data_;                                                            \
+    esphome::optional<type_name> prev_data_;                                                       \
     type_name& data() { return *data_; }                                                           \
-    size_t get_type_id() const override { return type_id_; }                                        \
+    /* FIX 3: Match the member name defined at the top of the macro */                             \
+    size_t get_type_id() const override { return class_type_id; }                                  \
     void stage(const BaseFrame& base) override {                                                   \
         BaseFrame::stage(base);                                                                    \
-        type_name data = base.packet;                                                              \
-        this->data_ = optional<type_name>(data);                                                   \
+        this->data_ = *reinterpret_cast<const type_name*>(&base.packet);                           \
     }                                                                                              \
-    optional<std::shared_ptr<BaseFrame>> control(const HWPCall& call) override;                    \
-    void transfer() override { this->prev_data_ = *this->data_; }                                  \
+    esphome::optional<std::shared_ptr<BaseFrame>> control(const HWPCall& call) override;           \
+    void transfer() override { if(this->data_.has_value()) this->prev_data_ = this->data_; }       \
     std::string format(const type_name& val, const type_name& ref) const;                          \
     std::string format(bool no_diff = false) const override;                                       \
     std::string format_prev() const override;                                                      \
     const char* type_string() const override;                                                      \
     bool is_changed() const override {                                                             \
-        return !prev_data_.has_value() || !data_.has_value() || *this->data_ != this->prev_data_;  \
+        /* FIX 4: Correct dereferencing for comparison in 2026 */                                  \
+        return !prev_data_.has_value() || !data_.has_value() || *this->data_ != *this->prev_data_; \
     }                                                                                              \
     bool has_previous_data() const override {                                                      \
         return data_.has_value() && prev_data_.has_value();                                        \
     }                                                                                              \
-    void finalize() { this->packet.from_type(*this->data_); }                                      \
+    void finalize() { if(this->data_.has_value()) this->packet.from_type(*this->data_); }          \
     void parse(heat_pump_data_t& hp_data) override;
 
 // Define the macro to accept a fully qualified class name.
