@@ -77,7 +77,7 @@ class HWPCall : public climate::ClimateCall {
   esphome::optional<HeatPumpRestrict*> h02_mode_restrictions;
   esphome::optional<FanMode*> f01_fan_mode;
 
- protected:
+ //protected:
   esphome::Component *component;
   heat_pump_data_t &hp_data;
   text_sensor::TextSensor *status_;
