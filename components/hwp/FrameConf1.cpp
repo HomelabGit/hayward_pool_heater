@@ -32,6 +32,7 @@
  */
 
 #include "FrameConf1.h"
+#include <set>  // <--- Add this line
 #include "CS.h"
 #include "Schema.h"
 #include "esphome/components/climate/climate.h"
