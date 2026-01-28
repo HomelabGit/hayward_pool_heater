@@ -73,7 +73,7 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
     if(call.h02_mode_restrictions.has_value()) {
         ESP_LOGI(TAG, "FrameConf1 control: request for mode restrictions %s",
         call.h02_mode_restrictions.value()->to_string().c_str());
-        command_frame.data().mode.set_mode_restriction(call.h02_mode_restrictions.value());
+        command_frame.data().mode.set_mode_restriction(*call.h02_mode_restrictions.value());
     }
     if (call.get_target_temperature().has_value()) {
         ESP_LOGI(TAG, "FrameConf1 control: request for target temperature %.1f",
