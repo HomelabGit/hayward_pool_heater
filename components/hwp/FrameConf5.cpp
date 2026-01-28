@@ -83,10 +83,10 @@ optional<std::shared_ptr<BaseFrame>> FrameConf5::control(const HWPCall& call) {
     FrameConf5 command_frame(*this);
     bool has_data = this->data_.has_value();
     if (call.d06_defrost_eco_mode.has_value()) {
-        command_frame.data().flags_a.set_eco_mode(call.d06_defrost_eco_mode.value());
+        command_frame.data().flags_a.set_eco_mode(*call.d06_defrost_eco_mode.value());        
     }
     if (call.u01_flow_meter.has_value()) {
-        command_frame.data().flags_a.set_flow_meter(call.u01_flow_meter.value());
+        command_frame.data().flags_a.set_flow_meter(*call.u01_flow_meter.value());
     }
     if (call.d05_min_economy_defrost_time_minutes.has_value()) {
         command_frame.data().d05_min_economy_defrost_time_minutes =
@@ -103,7 +103,7 @@ optional<std::shared_ptr<BaseFrame>> FrameConf5::control(const HWPCall& call) {
 
     if (!has_data) {
         ESP_LOGW(TAG, "FrameConfA: cannot publish changes yet. waiting for first packet");
-        call.component.status_momentary_warning("No data available", 5000);
+        call.component->status_momentary_warning("No data available", 5000);
         return nullopt;
     }
     command_frame.finalize();
