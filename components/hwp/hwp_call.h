@@ -55,7 +55,7 @@ class HWPCall : public climate::ClimateCall {
  public:
   explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
           text_sensor::TextSensor *status)
-      : climate::ClimateCall(parent), component_(component), hp_data_(hp_data), status_(status) {}
+      : climate::ClimateCall(parent), component(component), hp_data(hp_data), status_(status) {}
 
   void perform(); 
 
@@ -79,7 +79,7 @@ class HWPCall : public climate::ClimateCall {
 
  protected:
   esphome::Component *component_;
-  heat_pump_data_t &hp_data_;
+  heat_pump_data_t &hp_data;
   text_sensor::TextSensor *status_;
 };
 
