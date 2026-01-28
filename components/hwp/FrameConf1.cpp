@@ -159,7 +159,7 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
     }
     if (!has_value) {
         ESP_LOGW(TAG, "Cannot control yet. Waiting for first heater state packet");
-        call.component.status_momentary_warning("Waiting for initial heater state", 5000);
+        call.component->status_momentary_warning("Waiting for initial heater state", 5000);
         return nullopt;
     }
 
