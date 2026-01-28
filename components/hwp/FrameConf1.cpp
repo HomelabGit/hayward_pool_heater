@@ -195,7 +195,13 @@ void FrameConf1::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_dat
             // temp_frame->get_mode_restriction_desc());
         }
     } else {
-        traits.set_supported_modes(any_mode);
+        // 2026 Compliant: Pass modes directly as a list
+        traits.set_supported_modes({
+        climate::CLIMATE_MODE_OFF,
+        climate::CLIMATE_MODE_HEAT,
+        climate::CLIMATE_MODE_COOL,
+        climate::CLIMATE_MODE_DRY
+    });
     }
 }
 bool FrameConf1::matches(BaseFrame& specialized, BaseFrame& base) {
