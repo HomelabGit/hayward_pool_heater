@@ -179,7 +179,13 @@ void FrameConf1::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_dat
         traits.add_supported_mode(climate::CLIMATE_MODE_OFF);
         auto mode_restrictions = this->data_->mode.get_mode_restriction();
         if (mode_restrictions == HeatPumpRestrict::Any) {
-            traits.set_supported_modes(any_mode);
+            //traits.set_supported_modes(any_mode);
+            traits.set_supported_modes({
+                climate::CLIMATE_MODE_OFF,
+                climate::CLIMATE_MODE_HEAT,
+                climate::CLIMATE_MODE_COOL,
+                climate::CLIMATE_MODE_DRY
+            });            
         } else if (mode_restrictions == HeatPumpRestrict::Heating) {
             traits.add_supported_mode(climate::CLIMATE_MODE_HEAT);
         } else if (mode_restrictions == HeatPumpRestrict::Cooling) {
