@@ -44,6 +44,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/macros.h"
+#include "esphome/components/sensor/sensor.h" 
 
 /**
  * @brief Describes the structure and timing of packets on the NET port.
@@ -70,6 +71,7 @@
 namespace esphome {
 namespace hwp {
 
+namespace sensor = esphome::sensor; 
 #define FRAME_TEMP_MASK 0B00111110
 #define FRAME_TEMP_HALF_DEG_BIT 7
 #define FRAME_STATE_POWER_BIT 7
@@ -101,6 +103,7 @@ extern const char* POOL_HEATER_TAG;
 /**
  * @brief Class to handle communication with the pool heater.
  */
+
 class PoolHeater : public climate::Climate, public PollingComponent {
   public:
     PoolHeater(InternalGPIOPin* gpio_pin);
