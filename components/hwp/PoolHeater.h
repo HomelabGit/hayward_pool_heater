@@ -140,8 +140,10 @@ class PoolHeater : public climate::Climate, public PollingComponent {
 
     // Generic temperature sensor setters
 
-    void set_d01_defrost_start_sensor(number::Number* sensor) { this->d01_defrost_start_ = sensor; }
-    void set_d02_defrost_end_sensor(number::Number* sensor) { this->d02_defrost_end_ = sensor; }
+
+
+    void set_d01_defrost_start_sensor(number::Number* sensor) { this->d01_defrost_start_sensor = sensor; }
+    void set_d02_defrost_end_sensor(number::Number* sensor) { this->d02_defrost_end_sensor = sensor; }
     void set_d03_defrosting_cycle_time_minutes_sensor(number::Number* sensor) {
         this->d03_defrosting_cycle_time_minutes_sensor = sensor;
     }
