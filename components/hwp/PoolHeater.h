@@ -117,23 +117,25 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_heater_status_code_sensor(text_sensor::TextSensor* sensor);
     void set_heater_status_description_sensor(text_sensor::TextSensor* sensor);
     void set_heater_status_solution_sensor(text_sensor::TextSensor* sensor);
+  
     void set_suction_temperature_T01_sensor(sensor::Sensor* sensor) {
-        this->t01_temperature_suction_ = sensor;
-    }
+        this->t01_temperature_suction_sensor = sensor; 
+    }   
+
     void set_outlet_temperature_T03_sensor(sensor::Sensor* sensor) {
-        this->t03_temperature_outlet_ = sensor;
+        this->t03_temperature_outlet_sensor = sensor; 
     }
     
     void set_coil_temperature_T04_sensor(sensor::Sensor* sensor) {
-        this->t04_temperature_coil_ = sensor;
+        this->t04_temperature_coil_sensor = sensor; 
     }
 
     void set_ambient_temperature_T05_sensor(sensor::Sensor* sensor) {
-        this->t05_temperature_ambient_ = sensor;
+        this->t05_temperature_ambient_sensor = sensor;
     }
 
     void set_exhaust_temperature_T06_sensor(sensor::Sensor* sensor) {
-        this->t06_temperature_exhaust_ = sensor;
+        this->t06_temperature_exhaust_sensor = sensor;
     }
 
     // Generic temperature sensor setters
@@ -141,20 +143,16 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_d01_defrost_start_sensor(number::Number* sensor) { this->d01_defrost_start_ = sensor; }
     void set_d02_defrost_end_sensor(number::Number* sensor) { this->d02_defrost_end_ = sensor; }
     void set_d03_defrosting_cycle_time_minutes_sensor(number::Number* sensor) {
-        this->d03_defrosting_cycle_time_minutes_ = sensor;
+        this->d03_defrosting_cycle_time_minutes_sensor = sensor;
     }
     void set_d04_max_defrost_time_minutes_sensor(number::Number* sensor) {
-        this->d04_max_defrost_time_minutes_ = sensor;
+        this->d04_max_defrost_time_minutes_sensor = sensor;
     }
     void set_s02_water_flow_sensor(binary_sensor::BinarySensor* sensor) {
-        this->s02_water_flow_sensor_ = sensor;    
-    
-      void set_h02_mode_restrictions_sensor(select::Select* sensor) {
-        this->h02_mode_restrictions_ = sensor;
+        this->s02_water_flow_sensor_sensor = sensor;    
     }
-
-    void set_s02_water_flow_sensor(binary_sensor::BinarySensor* sensor) {
-        this->s02_water_flow_ = sensor;
+    void set_h02_mode_restrictions_sensor(select::Select* sensor) {
+        this->h02_mode_restrictions_sensor = sensor;
     }
     // void set_min_target_temperature_sensor(sensor::Sensor* sensor) {
     //     this->min_target_temperature_ = sensor;
@@ -163,45 +161,45 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     //     this->max_target_temperature_ = sensor;
     // }
     void set_r01_setpoint_cooling_sensor(sensor::Sensor* sensor) {
-        this->r01_setpoint_cooling_ = sensor;
+        this->r01_setpoint_cooling_sensor = sensor;
     }
     void set_r02_setpoint_heating_sensor(sensor::Sensor* sensor) {
-        this->r02_setpoint_heating_ = sensor;
+        this->r02_setpoint_heating_sensor = sensor;
     }
     void set_r03_setpoint_auto_sensor(sensor::Sensor* sensor) { this->r03_setpoint_auto_ = sensor; }
     void set_r04_return_diff_cooling_sensor(number::Number* sensor) {
-        this->r04_return_diff_cooling_ = sensor;
+        this->r04_return_diff_cooling_sensor = sensor;
     }
     void set_r05_shutdown_temp_diff_when_cooling_sensor(number::Number* sensor) {
-        this->r05_shutdown_temp_diff_when_cooling_ = sensor;
+        this->r05_shutdown_temp_diff_when_cooling_sensor = sensor;
     }
     void set_r06_return_diff_heating_sensor(number::Number* sensor) {
-        this->r06_return_diff_heating_ = sensor;
+        this->r06_return_diff_heating_sensor = sensor;
     }
     void set_r07_shutdown_diff_heating_sensor(number::Number* sensor) {
-        this->r07_shutdown_diff_heating_ = sensor;
+        this->r07_shutdown_diff_heating_sensor = sensor;
     }
     void set_r08_min_cool_setpoint_sensor(sensor::Sensor* sensor) {
-        this->r08_min_cool_setpoint_ = sensor;
+        this->r08_min_cool_setpoint_sensor = sensor;
     }
     void set_r09_max_cooling_setpoint_sensor(sensor::Sensor* sensor) {
-        this->r09_max_cooling_setpoint_ = sensor;
+        this->r09_max_cooling_setpoint_sensor = sensor;
     }
     void set_r10_min_heating_setpoint_sensor(sensor::Sensor* sensor) {
-        this->r10_min_heating_setpoint_ = sensor;
+        this->r10_min_heating_setpoint_sensor = sensor;
     }
     void set_r11_max_heating_setpoint_sensor(sensor::Sensor* sensor) {
-        this->r11_max_heating_setpoint_ = sensor;
+        this->r11_max_heating_setpoint_sensor = sensor;
     }
     void set_u01_flow_meter_sensor(select::Select* sensor) { this->u01_flow_meter_ = sensor; }
     void set_d06_defrost_eco_mode_sensor(select::Select* sensor) {
-        this->d06_defrost_eco_mode_ = sensor;
+        this->d06_defrost_eco_mode_sensor = sensor;
     }
     void set_d05_min_economy_defrost_time_minutes_sensor(number::Number* sensor) {
-        this->d05_min_economy_defrost_time_minutes_ = sensor;
+        this->d05_min_economy_defrost_time_minutes_sensor = sensor;
     }
     void set_u02_pulses_per_liter_sensor(number::Number* sensor) {
-        this->u02_pulses_per_liter_ = sensor;
+        this->u02_pulses_per_liter_sensor = sensor;
     }
 
     /**
@@ -232,7 +230,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     heat_pump_data_t& data() { return hp_data_; }
     void control(const HWPCall& call);
     void generate_code();
-
+  
   protected:
     heat_pump_data_t hp_data_;
     Bus driver_; ///< The bus driver for communication.
