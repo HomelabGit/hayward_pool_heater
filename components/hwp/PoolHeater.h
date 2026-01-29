@@ -45,6 +45,8 @@
 #include "esphome/core/helpers.h"
 #include "esphome/core/macros.h"
 #include "esphome/components/sensor/sensor.h" 
+#include "esphome/components/binary_sensor/binary_sensor.h"
+
 
 /**
  * @brief Describes the structure and timing of packets on the NET port.
@@ -72,6 +74,8 @@ namespace esphome {
 namespace hwp {
 
 namespace sensor = esphome::sensor; 
+namespace binary_sensor = esphome::binary_sensor;
+
 #define FRAME_TEMP_MASK 0B00111110
 #define FRAME_TEMP_HALF_DEG_BIT 7
 #define FRAME_STATE_POWER_BIT 7
@@ -142,7 +146,10 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_d04_max_defrost_time_minutes_sensor(number::Number* sensor) {
         this->d04_max_defrost_time_minutes_ = sensor;
     }
-    void set_h02_mode_restrictions_sensor(select::Select* sensor) {
+    void set_s02_water_flow_sensor(binary_sensor::BinarySensor* sensor) {
+        this->s02_water_flow_sensor_ = sensor;    
+    
+      void set_h02_mode_restrictions_sensor(select::Select* sensor) {
         this->h02_mode_restrictions_ = sensor;
     }
 
