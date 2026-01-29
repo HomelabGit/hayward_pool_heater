@@ -119,23 +119,23 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_heater_status_solution_sensor(text_sensor::TextSensor* sensor);
   
     void set_suction_temperature_T01_sensor(sensor::Sensor* sensor) {
-        this->t01_temperature_suction_sensor = sensor; 
+        this->t01_temperature_suction_ = sensor; 
     }   
 
     void set_outlet_temperature_T03_sensor(sensor::Sensor* sensor) {
-        this->t03_temperature_outlet_sensor = sensor; 
+        this->t03_temperature_outlet_ = sensor; 
     }
     
     void set_coil_temperature_T04_sensor(sensor::Sensor* sensor) {
-        this->t04_temperature_coil_sensor = sensor; 
+        this->t04_temperature_coil_ = sensor; 
     }
 
     void set_ambient_temperature_T05_sensor(sensor::Sensor* sensor) {
-        this->t05_temperature_ambient_sensor = sensor;
+        this->t05_temperature_ambient_ = sensor;
     }
 
     void set_exhaust_temperature_T06_sensor(sensor::Sensor* sensor) {
-        this->t06_temperature_exhaust_sensor = sensor;
+        this->t06_temperature_exhaust_ = sensor;
     }
 
     // Generic temperature sensor setters
@@ -267,11 +267,18 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     number::Number* u02_pulses_per_liter_;
 
     // Specific temperature sensors
-    sensor::Sensor* t01_temperature_suction_; ///< Suction temperature sensor (T01)
-    sensor::Sensor* t04_temperature_coil_;           ///< Coil temperature sensor (T04)
-    sensor::Sensor* t05_temperature_ambient_; ///< Ambient temperature sensor (T05)
-    sensor::Sensor* t03_temperature_outlet_; ///< Outlet temperature sensor (T03)
-    sensor::Sensor* t06_temperature_exhaust_;        ///< Exhaust temperature sensor (T06)
+    
+
+    sensor::Sensor *t01_temperature_suction_{nullptr};///< Suction temperature sensor (T01)
+    sensor::Sensor *t03_temperature_outlet_{nullptr}; ///< Outlet temperature sensor (T03)
+    sensor::Sensor *t04_temperature_coil_{nullptr}; ///< Coil temperature sensor (T04)
+    sensor::Sensor *t05_temperature_ambient_{nullptr};///< Ambient temperature sensor (T05)
+    sensor::Sensor* t06_temperature_exhaust_{nullptr};        ///< Exhaust temperature sensor (T06)
+
+    
+ 
+
+
 
     // // Generic temperature sensors for identification
     // sensor::Sensor* temperature_sensor_1_; ///< Generic temperature sensor 1
