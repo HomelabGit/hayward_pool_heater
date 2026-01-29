@@ -242,10 +242,16 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     text_sensor::TextSensor* heater_status_code_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_description_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_solution_sensor_{nullptr};
-    number::Number* d01_defrost_start_;
-    number::Number* d02_defrost_end_;
-    number::Number* d03_defrosting_cycle_time_minutes_;
-    number::Number* d04_max_defrost_time_minutes_;
+    
+ 
+
+    number::Number* d01_defrost_start_sensor{nullptr};
+    number::Number* d02_defrost_end_sensor{nullptr};
+    number::Number* d03_defrosting_cycle_time_minutes_sensor{nullptr};
+    number::Number* d04_max_defrost_time_minutes_sensor{nullptr};
+    number::Number* d05_min_economy_defrost_time_minutes_sensor{nullptr};
+
+
     select::Select* h02_mode_restrictions_;
     binary_sensor::BinarySensor* s02_water_flow_;
     // sensor::Sensor* min_target_temperature_;
@@ -276,9 +282,6 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     sensor::Sensor* t06_temperature_exhaust_{nullptr};        ///< Exhaust temperature sensor (T06)
 
     
- 
-
-
 
     // // Generic temperature sensors for identification
     // sensor::Sensor* temperature_sensor_1_; ///< Generic temperature sensor 1
