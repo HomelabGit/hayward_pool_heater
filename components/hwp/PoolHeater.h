@@ -218,7 +218,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
 
     HWPCall instantiate_call() {
         HWPCall hwpcall(
-            climate::ClimateCall(this), *this, this->hp_data_, *this->actual_status_sensor);
+          climate::ClimateCall(this), *this, this->hp_data_, this->actual_status_sensor);
         return hwpcall;
     }
     /**
