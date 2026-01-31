@@ -183,10 +183,10 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
             *call.r04_return_diff_cooling);
         command_frame.data().r04_return_diff_cooling = *call.r04_return_diff_cooling;
     }*/
-    if (call.get_r04_return_diff_cooling().has_value()) {
-        float val = call.get_r04_return_diff_cooling().value();
+    if (call.r04_return_diff_cooling_sensor().has_value()) {
+        float val = call.r04_return_diff_cooling_sensor().value();
         ESP_LOGD(TAG, "FrameConf1 control: request for return_diff_cooling %.1f", val);
-        command_frame.data().r04_return_diff_cooling = val;
+        command_frame.data().r04_return_diff_cooling_Sensor = val;
     }
   
     
