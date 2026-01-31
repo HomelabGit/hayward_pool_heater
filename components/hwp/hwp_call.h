@@ -51,11 +51,24 @@ class FlowMeterEnable;
 class HeatPumpRestrict;
 class FanMode;
 
-class HWPCall : public climate::ClimateCall {
+//class HWPCall : public climate::ClimateCall {
+// public:
+//  explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
+//          text_sensor::TextSensor *status)
+//      : climate::ClimateCall(parent), component(component), hp_data(hp_data), status_(status) {}
+
+
+class PoolHeater; // Forward declaration
+
+class HWPCall {
  public:
-  explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
-          text_sensor::TextSensor *status)
-      : climate::ClimateCall(parent), component(component), hp_data(hp_data), status_(status) {}
+  // 1. Add this constructor to match your call in PoolHeater.cpp
+  HWPCall(climate::ClimateCall call, PoolHeater &parent, heat_pump_data_t &data, text_sensor::TextSensor *sensor)
+      : call_(call), parent_(parent), data_(data), sensor_(sensor) {}
+
+
+
+
 
   void perform(); 
 
@@ -76,11 +89,17 @@ class HWPCall : public climate::ClimateCall {
   esphome::optional<FlowMeterEnable*> u01_flow_meter;
   esphome::optional<HeatPumpRestrict*> h02_mode_restrictions;
   esphome::optional<FanMode*> f01_fan_mode;
-
- //protected:
   esphome::Component *component;
-  heat_pump_data_t &hp_data;
-  text_sensor::TextSensor *status_;
+  
+ protected:
+  climate::ClimateCall call_;
+  PoolHeater &parent_;
+  heat_pump_data_t &data_;
+  text_sensor::TextSensor *sensor_; // 2. Store the pointer here
+
+
+  //heat_pump_data_t &hp_data;
+  //text_sensor::TextSensor *status_;
 };
 
 }  // namespace hwp
