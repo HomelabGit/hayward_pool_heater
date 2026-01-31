@@ -1,3 +1,4 @@
+/*
 /**
  *
  * Copyright (c) 2024 S. Leclerc (sle118@hotmail.com)
@@ -30,6 +31,7 @@
  * @disclaimer Use at your own risk. The developer assumes no responsibility
  * for any damage or loss caused by the use of this software.
  */
+/*
 #include "PoolHeater.h"
 
 #include "Schema.h"
@@ -306,18 +308,273 @@ bool PoolHeater::is_update_active() { return this->update_active_; }
  * @brief Get the climate traits.
  * @return The climate traits.
  */
-climate::ClimateTraits PoolHeater::traits() {
-    auto traits = climate::ClimateTraits();
 
-    traits.set_supports_current_temperature(true);
-    traits.set_supports_action(true);
-    this->driver_.traits(traits, this->hp_data_);
-    traits.set_supports_two_point_target_temperature(false);
-    traits.set_supports_current_humidity(false);
+//
+//    climate::ClimateTraits PoolHeater::traits() {
+//    auto traits = climate::ClimateTraits();
 
-    return traits;
+//    traits.set_supports_current_temperature(true);
+//    traits.set_supports_action(true);
+//    this->driver_.traits(traits, this->hp_data_);
+//    traits.set_supports_two_point_target_temperature(false);
+//    traits.set_supports_current_humidity(false);
+
+//    return traits;
+//}
+
+
+//} // namespace hwp
+//} // namespace esphome
+
+/**
+ *
+ * Copyright (c) 2024 S. Leclerc
+ * MIT License
+ *
+ */
+
+#include "PoolHeater.h"
+
+#include "Schema.h"
+#include "base_frame.h"
+#include "hwp_call.h"
+
+#include "esphome/components/climate/climate_mode.h"
+#include "esphome/core/defines.h"
+
+#ifdef USE_LOGGER
+#include "esphome/components/logger/logger.h"
+#endif
+
+#include <cmath>
+
+namespace esphome {
+namespace hwp {
+
+static const char *const POOL_HEATER_TAG = "hwp";
+
+PoolHeater::PoolHeater(InternalGPIOPin *gpio_pin) {
+  this->driver_.set_gpio_pin(gpio_pin);
 }
 
+void PoolHeater::setup() {
+  ESP_LOGI(POOL_HEATER_TAG, "Restoring state");
+  restore_state_();
 
-} // namespace hwp
-} // namespace esphome
+  ESP_LOGI(POOL_HEATER_TAG, "Setting up driver");
+  this->driver_.setup();
+  this->driver_.set_data_model(hp_data_);
+
+  this->current_temperature = NAN;
+
+  preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
+      get_object_id_hash() ^ fnv1_hash(App.get_compilation_time()));
+
+  restore_preferences_();
+  set_actual_status("Ready", true);
+  this->status_set_warning("Waiting for heater state");
+
+  ESP_LOGI(POOL_HEATER_TAG, "Setup complete");
+}
+
+void PoolHeater::set_actual_status_sensor(text_sensor::TextSensor *sensor) {
+  this->actual_status_sensor = sensor;
+}
+void PoolHeater::set_heater_status_code_sensor(text_sensor::TextSensor *sensor) {
+  this->heater_status_code_sensor_ = sensor;
+}
+void PoolHeater::set_heater_status_description_sensor(text_sensor::TextSensor *sensor) {
+  this->heater_status_description_sensor_ = sensor;
+}
+void PoolHeater::set_heater_status_solution_sensor(text_sensor::TextSensor *sensor) {
+  this->heater_status_solution_sensor_ = sensor;
+}
+
+void PoolHeater::update() {
+  ESP_LOGD(POOL_HEATER_TAG, "Updating climate and sensors");
+
+  if (this->driver_.get_bus_mode() == BUSMODE_ERROR) {
+    this->status_momentary_error("Bus Error", 5000);
+  }
+
+  if (is_heater_offline()) {
+    this->status_set_warning("Heater offline");
+    set_actual_status("Waiting for heater");
+    return;
+  }
+
+  set_actual_status("Connected to heater");
+
+  // -------- Climate state --------
+  if (hp_data_.t02_temperature_inlet.has_value())
+    this->current_temperature = hp_data_.t02_temperature_inlet.value();
+
+  if (hp_data_.target_temperature.has_value())
+    this->target_temperature = hp_data_.target_temperature.value();
+
+  if (hp_data_.action.has_value())
+    this->action = hp_data_.action.value();
+
+  if (hp_data_.mode.has_value()) {
+    this->mode = hp_data_.mode.value();
+    if (this->mode == climate::CLIMATE_MODE_OFF)
+      this->action = climate::CLIMATE_ACTION_OFF;
+  }
+
+  if (hp_data_.fan_mode.has_value()) {
+    auto custom = hp_data_.fan_mode.value().to_custom_fan_mode();
+    if (custom.has_value())
+      this->custom_fan_mode_ = custom.value();
+  }
+
+  // -------- Float sensors --------
+  publish_sensor_value(hp_data_.t01_temperature_suction, t01_temperature_suction_sensor);
+  publish_sensor_value(hp_data_.t03_temperature_outlet, t03_temperature_outlet_sensor);
+  publish_sensor_value(hp_data_.t04_temperature_coil, t04_temperature_coil_sensor);
+  publish_sensor_value(hp_data_.t05_temperature_ambient, t05_temperature_ambient_sensor);
+  publish_sensor_value(hp_data_.t06_temperature_exhaust, t06_temperature_exhaust_sensor);
+
+  publish_sensor_value(hp_data_.d01_defrost_start, d01_defrost_start_sensor);
+  publish_sensor_value(hp_data_.d02_defrost_end, d02_defrost_end_sensor);
+  publish_sensor_value(hp_data_.d03_defrosting_cycle_time_minutes,
+                       d03_defrosting_cycle_time_minutes_sensor);
+  publish_sensor_value(hp_data_.d04_max_defrost_time_minutes,
+                       d04_max_defrost_time_minutes_sensor);
+  publish_sensor_value(hp_data_.d05_min_economy_defrost_time_minutes,
+                       d05_min_economy_defrost_time_minutes_sensor);
+  publish_sensor_value(hp_data_.d06_defrost_eco_mode, d06_defrost_eco_mode_sensor);
+
+  publish_sensor_value(hp_data_.r01_setpoint_cooling, r01_setpoint_cooling_sensor);
+  publish_sensor_value(hp_data_.r02_setpoint_heating, r02_setpoint_heating_sensor);
+  publish_sensor_value(hp_data_.r03_setpoint_auto, r03_setpoint_auto_sensor);
+  publish_sensor_value(hp_data_.r04_return_diff_cooling, r04_return_diff_cooling_sensor);
+  publish_sensor_value(hp_data_.r05_shutdown_temp_diff_when_cooling,
+                       r05_shutdown_temp_diff_when_cooling_sensor);
+  publish_sensor_value(hp_data_.r06_return_diff_heating, r06_return_diff_heating_sensor);
+  publish_sensor_value(hp_data_.r07_shutdown_diff_heating, r07_shutdown_diff_heating_sensor);
+  publish_sensor_value(hp_data_.r08_min_cool_setpoint, r08_min_cool_setpoint_sensor);
+  publish_sensor_value(hp_data_.r09_max_cooling_setpoint, r09_max_cooling_setpoint_sensor);
+  publish_sensor_value(hp_data_.r10_min_heating_setpoint, r10_min_heating_setpoint_sensor);
+  publish_sensor_value(hp_data_.r11_max_heating_setpoint, r11_max_heating_setpoint_sensor);
+  publish_sensor_value(hp_data_.U02_pulses_per_liter, u02_pulses_per_liter_sensor);
+
+  // -------- Text sensors --------
+  if (actual_status_sensor)
+    actual_status_sensor->publish_state(actual_status_);
+
+  if (heater_status_code_sensor_)
+    heater_status_code_sensor_->publish_state(heater_status_.get_code());
+
+  if (heater_status_description_sensor_)
+    heater_status_description_sensor_->publish_state(heater_status_.get_description());
+
+  if (heater_status_solution_sensor_)
+    heater_status_solution_sensor_->publish_state(heater_status_.get_solution());
+
+  // -------- Binary / select sensors --------
+  publish_sensor_value(hp_data_.S02_water_flow, s02_water_flow_sensor);
+  publish_sensor_value(hp_data_.mode_restrictions, h02_mode_restrictions_sensor);
+  publish_sensor_value(hp_data_.U01_flow_meter, u01_flow_meter_sensor);
+
+  // -------- Final publish --------
+  if (update_active_) {
+    save_preferences_();
+    this->publish_state();
+  }
+}
+
+void PoolHeater::dump_config() {
+  ESP_LOGCONFIG(POOL_HEATER_TAG, "hwp:");
+  if (driver_.get_gpio_pin())
+    ESP_LOGCONFIG(POOL_HEATER_TAG, "  TX/RX pin: %d",
+                  driver_.get_gpio_pin()->get_pin());
+  else
+    ESP_LOGCONFIG(POOL_HEATER_TAG, "  TX/RX pin: none");
+
+  ESP_LOGCONFIG(POOL_HEATER_TAG, "  Passive mode: %s", ONOFF(passive_mode_));
+  ESP_LOGCONFIG(POOL_HEATER_TAG, "  Update active: %s", ONOFF(update_active_));
+
+  dump_traits_(POOL_HEATER_TAG);
+  driver_.dump_known_packets(POOL_HEATER_TAG);
+}
+
+void PoolHeater::control(const HWPCall &hwpcall) {
+  auto frames = driver_.control(hwpcall);
+
+  if (passive_mode_) {
+    status_momentary_warning("Passive mode", 5000);
+    publish_state();
+    return;
+  }
+
+  bool success = true;
+  for (auto *frame : frames) {
+    frame->print("QUEUE", POOL_HEATER_TAG, ESPHOME_LOG_LEVEL_VERBOSE, __LINE__);
+    if (!driver_.queue_frame_data(frame)) {
+      ESP_LOGE(POOL_HEATER_TAG, "Control frame queue error");
+      success = false;
+    }
+  }
+
+  if (!success) {
+    status_momentary_error("Control queuing error");
+    publish_state();
+  }
+}
+
+void PoolHeater::control(const climate::ClimateCall &call) {
+  HWPCall hwpcall(call, *this, hp_data_, actual_status_sensor);
+  control(hwpcall);
+}
+
+void PoolHeater::set_actual_status(const std::string &status, bool force) {
+  if (actual_status_ != status || force) {
+    ESP_LOGD(POOL_HEATER_TAG, "%s", status.c_str());
+    actual_status_ = status;
+    if (actual_status_sensor)
+      actual_status_sensor->publish_state(actual_status_);
+  }
+}
+
+void PoolHeater::set_passive_mode(bool passive) {
+  if (passive_mode_ == passive)
+    return;
+  passive_mode_ = passive;
+  publish_state();
+}
+
+void PoolHeater::set_update_active(bool active) {
+  update_active_ = active;
+}
+
+void PoolHeater::generate_code() {
+  BaseFrame::dump_c_code(POOL_HEATER_TAG);
+}
+
+bool PoolHeater::get_passive_mode() const { return passive_mode_; }
+bool PoolHeater::is_update_active() const { return update_active_; }
+
+climate::ClimateTraits PoolHeater::traits() {
+  climate::ClimateTraits traits;
+
+  traits.set_supports_current_temperature(true);
+  traits.set_supports_action(true);
+  traits.set_supports_two_point_target_temperature(false);
+  traits.set_supports_current_humidity(false);
+
+  traits.set_supported_modes({
+      climate::CLIMATE_MODE_OFF,
+      climate::CLIMATE_MODE_HEAT,
+      climate::CLIMATE_MODE_COOL,
+      climate::CLIMATE_MODE_AUTO,
+  });
+
+  driver_.traits(traits, hp_data_);
+  return traits;
+}
+
+}  // namespace hwp
+}  // namespace esphome
+
+
+
