@@ -68,7 +68,7 @@ void PoolHeater::setup() {
 
 
 void PoolHeater::set_actual_status_sensor(text_sensor::TextSensor* sensor) {
-    this->actual_status_sensor_ = sensor;
+    this->actual_status_sensor = sensor;
 }
 
 void PoolHeater::set_heater_status_code_sensor(text_sensor::TextSensor* sensor) {
@@ -108,7 +108,7 @@ void PoolHeater::update() {
     }
     this->mode = this->hp_data_.mode.value_or(this->mode);
     if(this->hp_data_.fan_mode.has_value() ) {
-        this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
+        this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
         this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
     }
 
@@ -127,17 +127,15 @@ void PoolHeater::update() {
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting coil temperature");
    // publish_sensor_value(this->hp_data_.t04_temperature_coil, this->t04_temperature_coil_);
-    publish_sensor_value(this->hp_data_.t04_temperature_suction, this->t04_temperature_suction_sensor);
+    publish_sensor_value(this->hp_data_.t04_temperature_coil, this->t04_temperature_coil_sensor);
 
+    
     ESP_LOGVV(POOL_HEATER_TAG, "Setting ambient temperature");
-    //publish_sensor_value(this->hp_data_.t05_temperature_ambient, this->t05_temperature_ambient_);
-    publish_sensor_value(this->hp_data_.t05_temperature_suction, this->t05_temperature_suction_sensor);
-
+    publish_sensor_value(this->hp_data_.t05_temperature_ambient, this->t05_temperature_ambient_sensor);
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting exhaust temperature");
-    //publish_sensor_value(this->hp_data_.t06_temperature_exhaust, this->t06_temperature_exhaust_);
-    publish_sensor_value(this->hp_data_.t06_temperature_suction, this->t06_temperature_suction_sensor);
-
+    publish_sensor_value(this->hp_data_.t06_temperature_exhaust, this->t06_temperature_exhaust_sensor);
+    
     // defrost config
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost start");
     //publish_sensor_value(this->hp_data_.d01_defrost_start, this->d01_defrost_start_);
