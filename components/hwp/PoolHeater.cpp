@@ -60,7 +60,7 @@ void PoolHeater::setup() {
     // updated, but this is an easy way to prevent wierd conflicts if e.g. select options change.
     preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
         //get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
-        get_object_id_hash() ^ fnv1_hash(App.get_compilation_time()))
+        get_object_id_hash() ^ fnv1_hash(App.get_compilation_time()));
         restore_preferences_();
         set_actual_status("Ready");
         this->status_set_warning("Waiting for heater state");
@@ -116,7 +116,7 @@ void PoolHeater::update() {
         this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
 
        // this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
-        this->custom_fan_mode = custom_fan_mode; 
+        this->custom_fan_mode_ = custom_fan_mode; 
         
         
         //this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
