@@ -108,7 +108,7 @@ void PoolHeater::update() {
     }
     this->mode = this->hp_data_.mode.value_or(this->mode);
     if(this->hp_data_.fan_mode.has_value() ) {
-        this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
+        this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
         this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
     }
 
@@ -122,7 +122,8 @@ void PoolHeater::update() {
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting outlet temperature");
     //publish_sensor_value(this->hp_data_.t03_temperature_outlet, this->t03_temperature_outlet_);
-    publish_sensor_value(this->hp_data_.t03_temperature_suction, this->t03_temperature_suction_sensor);
+    //publish_sensor_value(this->hp_data_.t03_temperature_suction, this->t03_temperature_suction_sensor);
+    publish_sensor_value(this->hp_data_.t03_temperature_outlet, this->t03_temperature_outlet_sensor);
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting coil temperature");
    // publish_sensor_value(this->hp_data_.t04_temperature_coil, this->t04_temperature_coil_);
@@ -184,13 +185,13 @@ void PoolHeater::update() {
     ESP_LOGVV(POOL_HEATER_TAG, "Setting max heating setpoint");
     publish_sensor_value(this->hp_data_.r11_max_heating_setpoint, this->r11_max_heating_setpoint_);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting pulses per liter");
-    publish_sensor_value(this->hp_data_.U02_pulses_per_liter, this->u02_pulses_per_liter_);
+    publish_sensor_value(this->hp_data_.U02_pulses_per_liter, this->u02_pulses_per_liter_sensor);
 
     //////////////////////////////////////////////
     // Transfer data to text sensors            //
     //////////////////////////////////////////////
     ESP_LOGVV(POOL_HEATER_TAG, "Setting actual status");
-    publish_sensor_value(this->actual_status_, this->actual_status_sensor_);
+    publish_sensor_value(this->actual_status_, this->actual_status_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting heater status code");
     publish_sensor_value(this->heater_status_.get_code(), this->heater_status_code_sensor_);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting heater status description");
