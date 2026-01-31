@@ -64,12 +64,13 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
     FrameConf1 command_frame(*this);
     auto has_value = this->data_.has_value();
 
-    if (call.get_mode().has_value()) {
-        call.hp_data.mode = *call.get_mode();
+    if (call.get_call().get_mode().has_value()) {
+        call.get_data().mode = *call.get_call().get_mode();
         ESP_LOGI(TAG, "FrameConf1 control: request for mode %s",
-            LOG_STR_ARG(climate_mode_to_string(*call.hp_data.mode)));
-        command_frame.set_mode(*call.hp_data.mode);
+        LOG_STR_ARG(climate_mode_to_string(call.get_data().mode)));
+        command_frame.set_mode(call.get_data().mode);
     }
+
     if(call.h02_mode_restrictions.has_value()) {
         ESP_LOGI(TAG, "FrameConf1 control: request for mode restrictions %s",
         call.h02_mode_restrictions.value()->to_string().c_str());
