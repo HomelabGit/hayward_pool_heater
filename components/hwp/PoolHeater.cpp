@@ -110,11 +110,14 @@ void PoolHeater::update() {
     this->mode = this->hp_data_.mode.value_or(this->mode);
    \
     
-    if(this->hp_data_.fan_mode.has_value() ) {
-        
+    //if(this->hp_data_.fan_mode.has_value() ) {
+    if (this->hp_data_.fan_mode->to_custom_fan_mode().has_value()) {    
         //auto custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
         //this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
-        this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode().value();
+        //this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode().value();
+        
+        this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode().value());
+}
 
        // this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
         this->custom_fan_mode_ = custom_fan_mode; 
