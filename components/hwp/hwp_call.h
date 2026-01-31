@@ -69,9 +69,8 @@ class HWPCall {
   
   void perform(); 
 
-  climate::ClimateCall &get_call() { return this->call_; }
-  heat_pump_data_t &get_data() { return this->data_; }
-
+  climate::ClimateCall get_call() const { return this->call_; }
+  heat_pump_data_t &get_data() const { return this->data_; } 
   // Use esphome::optional for 2026 toolchain stability
   esphome::optional<float> d01_defrost_start;
   esphome::optional<float> d02_defrost_end;
