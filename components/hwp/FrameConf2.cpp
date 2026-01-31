@@ -103,7 +103,7 @@ optional<std::shared_ptr<BaseFrame>> FrameConf2::control(const HWPCall& call) {
         fan_mode_frame.data().d04_max_defrost_time_minutes =
             call.d04_max_defrost_time_minutes.value();
     }
-    optional<FanMode> fan_mode = FanMode::from_call(call);
+    optional<FanMode> fan_mode = FanMode::from_call(call.get_call());
     if (fan_mode.has_value()) {
         ESP_LOGD(TAG, "control: setting fan mode to %s", fan_mode->to_string());
         fan_mode_frame.set_fan_mode(fan_mode.value());
