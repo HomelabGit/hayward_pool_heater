@@ -112,9 +112,10 @@ void PoolHeater::update() {
     
     if(this->hp_data_.fan_mode.has_value() ) {
         
-        auto custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
+        //auto custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
+        this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
         this->custom_fan_mode = custom_fan_mode; 
-
+        
         
         //this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
         //this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
@@ -151,7 +152,8 @@ void PoolHeater::update() {
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost end");
     //publish_sensor_value(this->hp_data_.d02_defrost_end, this->d02_defrost_end_);
-    publish_sensor_value(this->hp_data_.d02_defrost_start, this->d02_defrost_start_sensor);
+    //publish_sensor_value(this->hp_data_.d02_defrost_start, this->d02_defrost_start_sensor);
+    publish_sensor_value(this->hp_data_.d02_defrost_end, this->d02_defrost_end_sensor);
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost cycle time");
     publish_sensor_value(
@@ -161,7 +163,7 @@ void PoolHeater::update() {
         this->hp_data_.d04_max_defrost_time_minutes, this->d04_max_defrost_time_minutes_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting min economy defrost time");
     publish_sensor_value(this->hp_data_.d05_min_economy_defrost_time_minutes,
-        this->d05_min_economy_defrost_time_minutes_);
+        this->d05_min_economy_defrost_time_minutes_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting eco mode");
     publish_sensor_value(this->hp_data_.d06_defrost_eco_mode, this->d06_defrost_eco_mode_sensor);
 
@@ -176,7 +178,7 @@ void PoolHeater::update() {
     publish_sensor_value(this->hp_data_.r04_return_diff_cooling, this->r04_return_diff_cooling_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown temp diff cooling");
     publish_sensor_value(this->hp_data_.r05_shutdown_temp_diff_when_cooling,
-        this->r05_shutdown_temp_diff_when_cooling_);
+        this->r05_shutdown_temp_diff_when_cooling_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown diff cooling");
     publish_sensor_value(this->hp_data_.r06_return_diff_heating, this->r06_return_diff_heating_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown temp diff heating");
