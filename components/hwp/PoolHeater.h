@@ -218,7 +218,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
 
     HWPCall instantiate_call() {
         HWPCall hwpcall(
-            climate::ClimateCall(this), *this, this->hp_data_, *this->actual_status_sensor_);
+            climate::ClimateCall(this), *this, this->hp_data_, *this->actual_status_sensor);
         return hwpcall;
     }
     /**
@@ -240,7 +240,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     std::string actual_status_;
     bool passive_mode_ = true;
     bool update_active_ = false;
-    text_sensor::TextSensor* actual_status_sensor_{nullptr};
+    text_sensor::TextSensor* actual_status_sensor{nullptr};
     text_sensor::TextSensor* heater_status_code_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_description_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_solution_sensor_{nullptr};
@@ -256,15 +256,9 @@ class PoolHeater : public climate::Climate, public PollingComponent {
 
 
     select::Select* h02_mode_restrictions_sensor{nullptr};   // Added _sensor
-    //    select::Select* h02_mode_restrictions_;
     binary_sensor::BinarySensor* s02_water_flow_sensor{nullptr}; // Added _sensor
-   //   binary_sensor::BinarySensor* s02_water_flow_;
     select::Select* u01_flow_meter_sensor{nullptr};         // Added _sensor
     select::Select* d06_defrost_eco_mode_sensor{nullptr};    // Added _sensor
-
-
- 
-
 
     // sensor::Sensor* min_target_temperature_;
     // sensor::Sensor* max_target_temperature_;
@@ -279,9 +273,6 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     sensor::Sensor* r09_max_cooling_setpoint_sensor;
     sensor::Sensor* r10_min_heating_setpoint_sensor;
     sensor::Sensor* r11_max_heating_setpoint_sensor;
-    select::Select* u01_flow_meter_sensor;
-    select::Select* d06_defrost_eco_mode_sensor;
-    number::Number* d05_min_economy_defrost_time_minutes_sensor;
     //number::Number* u02_pulses_per_liter_;
 
     number::Number* r04_return_diff_cooling_sensor{nullptr};
