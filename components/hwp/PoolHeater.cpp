@@ -59,7 +59,8 @@ void PoolHeater::setup() {
     // Using App.get_compilation_time() means these will get reset each time the firmware is
     // updated, but this is an easy way to prevent wierd conflicts if e.g. select options change.
     preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
-        get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
+        //get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
+        get_object_id_hash() ^ fnv1_hash(App.get_compilation_time())
     restore_preferences_();
     set_actual_status("Ready");
     this->status_set_warning("Waiting for heater state");
@@ -107,9 +108,16 @@ void PoolHeater::update() {
         this->action = climate::CLIMATE_ACTION_OFF;
     }
     this->mode = this->hp_data_.mode.value_or(this->mode);
+   \
+    
     if(this->hp_data_.fan_mode.has_value() ) {
-        this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
-        this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
+        
+        auto custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
+        this->custom_fan_mode = custom_fan_mode; 
+
+        
+        //this->custom_fan_mode_ = this->hp_data_.fan_mode->to_custom_fan_mode();
+        //this->fan_mode = this->hp_data_.fan_mode->to_climate_fan_mode();
     }
 
     //////////////////////////////////////////////
@@ -147,10 +155,10 @@ void PoolHeater::update() {
 
     ESP_LOGVV(POOL_HEATER_TAG, "Setting defrost cycle time");
     publish_sensor_value(
-        this->hp_data_.d03_defrosting_cycle_time_minutes, this->d03_defrosting_cycle_time_minutes_);
+        this->hp_data_.d03_defrosting_cycle_time_minutes, this->d03_defrosting_cycle_time_minutes_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting max defrost time");
     publish_sensor_value(
-        this->hp_data_.d04_max_defrost_time_minutes, this->d04_max_defrost_time_minutes_);
+        this->hp_data_.d04_max_defrost_time_minutes, this->d04_max_defrost_time_minutes_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting min economy defrost time");
     publish_sensor_value(this->hp_data_.d05_min_economy_defrost_time_minutes,
         this->d05_min_economy_defrost_time_minutes_);
