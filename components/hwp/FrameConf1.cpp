@@ -77,7 +77,53 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
         call.h02_mode_restrictions.value()->to_string().c_str());
         command_frame.data().mode.set_mode_restriction(*call.h02_mode_restrictions.value());
     }
-    if (call.get_target_temperature().has_value()) {
+   
+  if (call.get_call().get_target_temperature().has_value()) {
+    float requested_temp = call.get_call().get_target_temperature().value();
+
+    ESP_LOGI(TAG, "FrameConf1 control: request for target temperature %.1f", requested_temp);
+
+    // Use get_data() instead of hp_data
+    if (!call.get_data().is_temperature_valid(requested_temp)) {
+        char error_msg[101] = {};
+        snprintf(error_msg, sizeof(error_msg), "Invalid temperature %.1f. Must be between %.1fC and %.1fC.",
+            requested_temp, call.get_data().get_min_target(),
+            call.get_data().get_max_target());
+        ESP_LOGE(TAG, "Error setTemp:  %s", error_msg);
+    } else {
+        call.get_data().target_temperature = requested_temp;
+    }
+
+    // Access updated value from your data struct
+    float final_temp = call.get_data().target_temperature.value();
+
+    switch (command_frame.get_active_mode()) {
+        case STATE_COOLING_MODE:
+            ESP_LOGD(TAG, "FrameConf1 control: request for cooling temperature %.1f", final_temp);
+            command_frame.set_target_cooling(final_temp);
+            break;
+        case STATE_HEATING_MODE:
+            command_frame.set_target_heating(final_temp);
+            ESP_LOGD(TAG, "FrameConf1 control: request for heating temperature %.1f", final_temp);
+            break;
+        case STATE_AUTO_MODE:
+            ESP_LOGD(TAG, "FrameConf1 control: request for auto temperature %.1f", final_temp);
+            command_frame.set_target_auto(final_temp);
+            break;
+        case STATE_OFF: {
+            ESP_LOGD(TAG, "FrameConf1 control: request for temperature %.1f while off", final_temp);
+            auto restrictions = command_frame.data().mode.get_mode_restriction();
+            if (restrictions == HeatPumpRestrict::Cooling) {
+                command_frame.set_target_cooling(final_temp);
+            } else {
+                command_frame.set_target_heating(final_temp);
+            }
+        } break;
+    }
+}
+ 
+    
+ /*   if (call.get_target_temperature().has_value()) {
         ESP_LOGI(TAG, "FrameConf1 control: request for target temperature %.1f",
             call.get_target_temperature().value());
         if (!call.hp_data.is_temperature_valid(call.get_target_temperature().value())) {
@@ -130,12 +176,23 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
             }
         } break;
         }
-    }
-    if(call.r04_return_diff_cooling.has_value()) {
+    } */
+    
+  /*  if(call.r04_return_diff_cooling.has_value()) {
         ESP_LOGD(TAG, "FrameConf1 control: request for return_diff_cooling %.1f",
             *call.r04_return_diff_cooling);
         command_frame.data().r04_return_diff_cooling = *call.r04_return_diff_cooling;
+    }*/
+    if (call.get_r04_return_diff_cooling().has_value()) {
+        float val = call.get_r04_return_diff_cooling().value();
+        ESP_LOGD(TAG, "FrameConf1 control: request for return_diff_cooling %.1f", val);
+        command_frame.data().r04_return_diff_cooling = val;
     }
+  
+    
+
+
+    
     if (call.r05_shutdown_temp_diff_when_cooling.has_value()) {
         ESP_LOGD(TAG, "FrameConf1 control: request for shutdown_temp_diff_when_cooling %.1f",
             *call.r05_shutdown_temp_diff_when_cooling);
