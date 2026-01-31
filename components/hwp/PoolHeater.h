@@ -254,17 +254,27 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     number::Number* d05_min_economy_defrost_time_minutes_sensor{nullptr};
 
 
-    select::Select* h02_mode_restrictions_;
-    binary_sensor::BinarySensor* s02_water_flow_;
+
+    select::Select* h02_mode_restrictions_sensor{nullptr};   // Added _sensor
+    //    select::Select* h02_mode_restrictions_;
+    binary_sensor::BinarySensor* s02_water_flow_sensor{nullptr}; // Added _sensor
+   //   binary_sensor::BinarySensor* s02_water_flow_;
+    select::Select* u01_flow_meter_sensor{nullptr};         // Added _sensor
+    select::Select* d06_defrost_eco_mode_sensor{nullptr};    // Added _sensor
+
+
+ 
+
+
     // sensor::Sensor* min_target_temperature_;
     // sensor::Sensor* max_target_temperature_;
     sensor::Sensor* r01_setpoint_cooling_;
     sensor::Sensor* r02_setpoint_heating_;
     sensor::Sensor* r03_setpoint_auto_;
-    number::Number* r04_return_diff_cooling_;
-    number::Number* r05_shutdown_temp_diff_when_cooling_;
-    number::Number* r06_return_diff_heating_;
-    number::Number* r07_shutdown_diff_heating_;
+   // number::Number* r04_return_diff_cooling_;
+    //number::Number* r05_shutdown_temp_diff_when_cooling_;
+    //number::Number* r06_return_diff_heating_;
+    //number::Number* r07_shutdown_diff_heating_;
     sensor::Sensor* r08_min_cool_setpoint_;
     sensor::Sensor* r09_max_cooling_setpoint_;
     sensor::Sensor* r10_min_heating_setpoint_;
@@ -272,16 +282,28 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     select::Select* u01_flow_meter_;
     select::Select* d06_defrost_eco_mode_;
     number::Number* d05_min_economy_defrost_time_minutes_;
-    number::Number* u02_pulses_per_liter_;
+    //number::Number* u02_pulses_per_liter_;
+
+    number::Number* r04_return_diff_cooling_sensor{nullptr};
+    number::Number* r05_shutdown_temp_diff_when_cooling_sensor{nullptr};
+    number::Number* r06_return_diff_heating_sensor{nullptr};
+    number::Number* r07_shutdown_diff_heating_sensor{nullptr};
+    number::Number* u02_pulses_per_liter_sensor{nullptr};
+
 
     // Specific temperature sensors
     
+    sensor::Sensor *t01_temperature_suction_sensor{nullptr}; // Added _sensor
+    sensor::Sensor *t03_temperature_outlet_sensor{nullptr};  // Added _sensor
+    sensor::Sensor *t04_temperature_coil_sensor{nullptr};   // Added _sensor
+    sensor::Sensor *t05_temperature_ambient_sensor{nullptr}; // Added _sensor
+    sensor::Sensor *t06_temperature_exhaust_sensor{nullptr}; // Added _sensor
 
-    sensor::Sensor *t01_temperature_suction_{nullptr};///< Suction temperature sensor (T01)
-    sensor::Sensor *t03_temperature_outlet_{nullptr}; ///< Outlet temperature sensor (T03)
-    sensor::Sensor *t04_temperature_coil_{nullptr}; ///< Coil temperature sensor (T04)
-    sensor::Sensor *t05_temperature_ambient_{nullptr};///< Ambient temperature sensor (T05)
-    sensor::Sensor* t06_temperature_exhaust_{nullptr};        ///< Exhaust temperature sensor (T06)
+    //sensor::Sensor *t01_temperature_suction_{nullptr};///< Suction temperature sensor (T01)
+    //sensor::Sensor *t03_temperature_outlet_{nullptr}; ///< Outlet temperature sensor (T03)
+    //sensor::Sensor *t04_temperature_coil_{nullptr}; ///< Coil temperature sensor (T04)
+    //sensor::Sensor *t05_temperature_ambient_{nullptr};///< Ambient temperature sensor (T05)
+    //sensor::Sensor* t06_temperature_exhaust_{nullptr};        ///< Exhaust temperature sensor (T06)
 
     
 
