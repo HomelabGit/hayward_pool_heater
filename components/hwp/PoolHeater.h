@@ -151,7 +151,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
         this->d04_max_defrost_time_minutes_sensor = sensor;
     }
     void set_s02_water_flow_sensor(binary_sensor::BinarySensor* sensor) {
-        this->s02_water_flow_sensor_sensor = sensor;    
+        this->s02_water_flow_sensor = sensor;    
     }
     void set_h02_mode_restrictions_sensor(select::Select* sensor) {
         this->h02_mode_restrictions_sensor = sensor;
@@ -168,7 +168,7 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_r02_setpoint_heating_sensor(sensor::Sensor* sensor) {
         this->r02_setpoint_heating_sensor = sensor;
     }
-    void set_r03_setpoint_auto_sensor(sensor::Sensor* sensor) { this->r03_setpoint_auto_ = sensor; }
+    void set_r03_setpoint_auto_sensor(sensor::Sensor* sensor) { this->r03_setpoint_auto_sensor = sensor; }
     void set_r04_return_diff_cooling_sensor(number::Number* sensor) {
         this->r04_return_diff_cooling_sensor = sensor;
     }
@@ -268,9 +268,9 @@ class PoolHeater : public climate::Climate, public PollingComponent {
 
     // sensor::Sensor* min_target_temperature_;
     // sensor::Sensor* max_target_temperature_;
-    sensor::Sensor* r01_setpoint_cooling_;
-    sensor::Sensor* r02_setpoint_heating_;
-    sensor::Sensor* r03_setpoint_auto_;
+    sensor::Sensor* r01_setpoint_cooling_sensor;
+    sensor::Sensor* r02_setpoint_heating_sensor;
+    sensor::Sensor* r03_setpoint_auto_sensor;
    // number::Number* r04_return_diff_cooling_;
     //number::Number* r05_shutdown_temp_diff_when_cooling_;
     //number::Number* r06_return_diff_heating_;
