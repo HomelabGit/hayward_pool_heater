@@ -119,23 +119,23 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     void set_heater_status_solution_sensor(text_sensor::TextSensor* sensor);
   
     void set_suction_temperature_T01_sensor(sensor::Sensor* sensor) {
-        this->t01_temperature_suction_ = sensor; 
+        this->t01_temperature_suction_sensor = sensor; 
     }   
 
     void set_outlet_temperature_T03_sensor(sensor::Sensor* sensor) {
-        this->t03_temperature_outlet_ = sensor; 
+        this->t03_temperature_outlet_sensor = sensor; 
     }
     
     void set_coil_temperature_T04_sensor(sensor::Sensor* sensor) {
-        this->t04_temperature_coil_ = sensor; 
+        this->t04_temperature_coil_sensor = sensor; 
     }
 
     void set_ambient_temperature_T05_sensor(sensor::Sensor* sensor) {
-        this->t05_temperature_ambient_ = sensor;
+        this->t05_temperature_ambient_sensor = sensor;
     }
 
     void set_exhaust_temperature_T06_sensor(sensor::Sensor* sensor) {
-        this->t06_temperature_exhaust_ = sensor;
+        this->t06_temperature_exhaust_sensor = sensor;
     }
 
     // Generic temperature sensor setters
