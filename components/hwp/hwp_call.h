@@ -50,6 +50,8 @@ class DefrostEcoMode;
 class FlowMeterEnable;
 class HeatPumpRestrict;
 class FanMode;
+class PoolHeater; 
+
 
 //class HWPCall : public climate::ClimateCall {
 // public:
@@ -58,19 +60,17 @@ class FanMode;
 //      : climate::ClimateCall(parent), component(component), hp_data(hp_data), status_(status) {}
 
 
-class PoolHeater; // Forward declaration
 
 class HWPCall {
  public:
   // 1. Add this constructor to match your call in PoolHeater.cpp
   HWPCall(climate::ClimateCall call, PoolHeater &parent, heat_pump_data_t &data, text_sensor::TextSensor *sensor)
       : call_(call), parent_(parent), data_(data), sensor_(sensor) {}
-
-
-
-
-
+  
   void perform(); 
+
+  climate::ClimateCall &get_call() { return this->call_; }
+  heat_pump_data_t &get_data() { return this->data_; }
 
   // Use esphome::optional for 2026 toolchain stability
   esphome::optional<float> d01_defrost_start;
@@ -96,7 +96,7 @@ class HWPCall {
   PoolHeater &parent_;
   heat_pump_data_t &data_;
   text_sensor::TextSensor *sensor_; // 2. Store the pointer here
-
+  
 
   //heat_pump_data_t &hp_data;
   //text_sensor::TextSensor *status_;
