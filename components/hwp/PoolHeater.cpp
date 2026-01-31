@@ -202,16 +202,16 @@ void PoolHeater::update() {
     // Transfer data to binary sensors          //
     //////////////////////////////////////////////
     ESP_LOGVV(POOL_HEATER_TAG, "Setting water flow");
-    publish_sensor_value(this->hp_data_.S02_water_flow, this->s02_water_flow_);
+    publish_sensor_value(this->hp_data_.S02_water_flow, this->s02_water_flow_sensor);
 
     
     //////////////////////////////////////////////
     // Transfer data to select sensors          //
     //////////////////////////////////////////////
     ESP_LOGVV(POOL_HEATER_TAG, "Setting mode restrictions");
-    publish_sensor_value(this->hp_data_.mode_restrictions, this->h02_mode_restrictions_);    
+    publish_sensor_value(this->hp_data_.mode_restrictions, this->h02_mode_restrictions_sensor);    
      ESP_LOGVV(POOL_HEATER_TAG, "Setting flow meter");
-    publish_sensor_value(this->hp_data_.U01_flow_meter, this->u01_flow_meter_);
+    publish_sensor_value(this->hp_data_.U01_flow_meter, this->u01_flow_meter_sensor);
     
 
 
@@ -262,15 +262,15 @@ void PoolHeater::control(const HWPCall& hwpcall) {
     }
 }
 void PoolHeater::control(const climate::ClimateCall& call) {
-    HWPCall hwpcall(call, *this, this->hp_data_, *this->actual_status_sensor_);
+    HWPCall hwpcall(call, *this, this->hp_data_, *this->actual_status_sensor);
     this->control(hwpcall);
 }
 
 void PoolHeater::set_actual_status(const std::string status, bool force) {
     if (this->actual_status_ != status || force) {
         ESP_LOGD(POOL_HEATER_TAG, "%s", status.c_str());
-        this->actual_status_ = status;
-        this->actual_status_sensor_->publish_state(this->actual_status_);
+        this->actual_status = status;
+        this->actual_status_sensor->publish_state(this->actual_status);
     }
 }
 
