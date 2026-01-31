@@ -155,33 +155,33 @@ void PoolHeater::update() {
     publish_sensor_value(this->hp_data_.d05_min_economy_defrost_time_minutes,
         this->d05_min_economy_defrost_time_minutes_);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting eco mode");
-    publish_sensor_value(this->hp_data_.d06_defrost_eco_mode, this->d06_defrost_eco_mode_);
+    publish_sensor_value(this->hp_data_.d06_defrost_eco_mode, this->d06_defrost_eco_mode_sensor);
 
     // setpoints/temperatyre limits
     ESP_LOGVV(POOL_HEATER_TAG, "Setting cooling setpoint");
-    publish_sensor_value(this->hp_data_.r01_setpoint_cooling, this->r01_setpoint_cooling_);
+    publish_sensor_value(this->hp_data_.r01_setpoint_cooling, this->r01_setpoint_cooling_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting heating setpoint");
-    publish_sensor_value(this->hp_data_.r02_setpoint_heating, this->r02_setpoint_heating_);
+    publish_sensor_value(this->hp_data_.r02_setpoint_heating, this->r02_setpoint_heating_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting auto setpoint");
-    publish_sensor_value(this->hp_data_.r03_setpoint_auto, this->r03_setpoint_auto_);
+    publish_sensor_value(this->hp_data_.r03_setpoint_auto, this->r03_setpoint_auto_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting return diff cooling");
-    publish_sensor_value(this->hp_data_.r04_return_diff_cooling, this->r04_return_diff_cooling_);
+    publish_sensor_value(this->hp_data_.r04_return_diff_cooling, this->r04_return_diff_cooling_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown temp diff cooling");
     publish_sensor_value(this->hp_data_.r05_shutdown_temp_diff_when_cooling,
         this->r05_shutdown_temp_diff_when_cooling_);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown diff cooling");
-    publish_sensor_value(this->hp_data_.r06_return_diff_heating, this->r06_return_diff_heating_);
+    publish_sensor_value(this->hp_data_.r06_return_diff_heating, this->r06_return_diff_heating_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting shutdown temp diff heating");
     publish_sensor_value(
-        this->hp_data_.r07_shutdown_diff_heating, this->r07_shutdown_diff_heating_);
+        this->hp_data_.r07_shutdown_diff_heating, this->r07_shutdown_diff_heating_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting min/max setpoints");
-    publish_sensor_value(this->hp_data_.r08_min_cool_setpoint, this->r08_min_cool_setpoint_);
+    publish_sensor_value(this->hp_data_.r08_min_cool_setpoint, this->r08_min_cool_setpoint_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting max cooling setpoint");
-    publish_sensor_value(this->hp_data_.r09_max_cooling_setpoint, this->r09_max_cooling_setpoint_);
+    publish_sensor_value(this->hp_data_.r09_max_cooling_setpoint, this->r09_max_cooling_setpoint_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting min heating setpoint");
-    publish_sensor_value(this->hp_data_.r10_min_heating_setpoint, this->r10_min_heating_setpoint_);
+    publish_sensor_value(this->hp_data_.r10_min_heating_setpoint, this->r10_min_heating_setpoint_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting max heating setpoint");
-    publish_sensor_value(this->hp_data_.r11_max_heating_setpoint, this->r11_max_heating_setpoint_);
+    publish_sensor_value(this->hp_data_.r11_max_heating_setpoint, this->r11_max_heating_setpoint_sensor);
     ESP_LOGVV(POOL_HEATER_TAG, "Setting pulses per liter");
     publish_sensor_value(this->hp_data_.U02_pulses_per_liter, this->u02_pulses_per_liter_sensor);
 
@@ -262,15 +262,15 @@ void PoolHeater::control(const HWPCall& hwpcall) {
     }
 }
 void PoolHeater::control(const climate::ClimateCall& call) {
-    HWPCall hwpcall(call, *this, this->hp_data_, *this->actual_status_sensor);
+    HWPCall hwpcall(call, *this, this->hp_data_, this->actual_status_sensor);
     this->control(hwpcall);
 }
 
 void PoolHeater::set_actual_status(const std::string status, bool force) {
     if (this->actual_status_ != status || force) {
         ESP_LOGD(POOL_HEATER_TAG, "%s", status.c_str());
-        this->actual_status = status;
-        this->actual_status_sensor->publish_state(this->actual_status);
+        this->actual_status_ = status;
+        this->actual_status_sensor->publish_state(this->actual_status_);
     }
 }
 
