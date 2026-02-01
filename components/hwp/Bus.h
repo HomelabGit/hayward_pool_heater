@@ -43,74 +43,66 @@
  */
 #pragma once
 
+#include "BaseFrame.h"
+#include "Decoder.h"
+#include "esphome/components/climate/climate.h"
+#include "esphome/core/helpers.h"
 #include <vector>
 #include <memory>
-#include "esphome/core/log.h"
-#include "esphome/core/helpers.h"
-#include "Decoder.h"
-#include "base_frame.h"
-#include "heat_pump_data.h"
-#include "esphome/components/climate/climate_traits.h"
+#include <optional>
 
 namespace esphome {
 namespace hwp {
 
-// Simple call struct for sending commands
-struct HWPCall {
-  int command;
-};
-
-// Bus operating modes
 enum BusMode { BUSMODE_RX, BUSMODE_TX };
 
 class Bus {
  public:
-  // Constructor with optional RX/TX buffer sizes
   Bus(size_t rx_buffer_size = 16, size_t tx_buffer_size = 16);
 
-  // Start receiving frames
+  /** Start receiving mode */
   void start_receive();
 
-  // Process a single RMT pulse
+  /** Process incoming pulse from RMT */
   void process_pulse(rmt_symbol_word_t* item);
 
-  // Handle queued messages to send
+  /** Send queued frames */
   void process_send_queue();
 
-  // Send a header packet
-  void sendHeader();
-
-  // Timing / controller checks
+  /** Check if controller timed out */
   bool is_controller_timeout() const;
+
+  /** Check if it's time for next send */
   bool is_time_for_next() const;
+
+  /** Return timestamp for next controller packet */
   esphome::optional<unsigned long> next_controller_packet() const;
 
-  // Send a command and get responses
+  /** Access received frames */
   std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
 
-  // Fill climate traits from heat pump data
+  /** Update climate traits based on frames */
   void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
 
  private:
+  void sendHeader();
+
   BusMode mode_;
-
-  // Timing constants
-  inline static constexpr uint32_t delay_between_controller_messages_ms = 1000;
-  inline static constexpr uint32_t delay_between_sending_messages_ms = 150;
-  inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
-  inline static constexpr uint32_t frame_heading_low_duration_ms = 500;
-
-  // RX/TX frame buffers
   std::vector<std::shared_ptr<BaseFrame>> rx_frames_;
   std::vector<std::shared_ptr<BaseFrame>> tx_frames_;
-
-  // Current packet being sent
   std::shared_ptr<BaseFrame> current_sending_packet_;
   esphome::optional<unsigned long> previous_sent_packet_;
+
+  // Timing configuration
+  const unsigned long delay_between_sending_messages_ms = 100;
+  const unsigned long delay_between_controller_messages_ms = 1000;
+  const unsigned long frame_heading_low_duration_ms = 8;
+  const unsigned long frame_heading_high_duration_ms = 8;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
 
