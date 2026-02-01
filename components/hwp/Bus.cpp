@@ -98,7 +98,7 @@ void Bus::process_send_queue() {
   }
 
   sendHeader();
-  previous_sent_packet_ = millis();
+  previous_sent_packet_ = esphome::millis();
   mode_ = BUSMODE_RX;
 }
 
@@ -108,12 +108,15 @@ void Bus::sendHeader() {
 }
 
 bool Bus::is_controller_timeout() const {
-  return millis() > (delay_between_controller_messages_ms * 1.5f);
+  return esphome::millis() > (delay_between_controller_messages_ms * 1.5f);
+
 }
 
 bool Bus::is_time_for_next() const {
   if (!previous_sent_packet_) return true;
-  return millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
+  //return millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
+  return esphome::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
+
 }
 
 esphome::optional<unsigned long> Bus::next_controller_packet() const {
