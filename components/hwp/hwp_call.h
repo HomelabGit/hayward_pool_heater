@@ -39,39 +39,46 @@
 #include "esphome/core/helpers.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/text_sensor/text_sensor.h"
-#include <optional> 
+#include <optional>
 
 namespace esphome {
 namespace hwp {
 
-using heat_pump_data_t = heat_pump_data_t; 
-
+// Forward declarations of other classes
 class DefrostEcoMode;
 class FlowMeterEnable;
 class HeatPumpRestrict;
 class FanMode;
-class PoolHeater; 
+class PoolHeater;
 
+// Alias for heat pump data
+using heat_pump_data_t = ::heat_pump_data_t;
 
-//class HWPCall : public climate::ClimateCall {
-// public:
-//  explicit HWPCall(climate::Climate *parent, Component *component, heat_pump_data_t &hp_data,
-//          text_sensor::TextSensor *status)
-//      : climate::ClimateCall(parent), component(component), hp_data(hp_data), status_(status) {}
-
-
-
+/**
+ * @brief HWPCall encapsulates a control call to the heat pump via a climate call.
+ * Designed for ESPHome 26 compatibility.
+ */
 class HWPCall {
  public:
-  // 1. Add this constructor to match your call in PoolHeater.cpp
-  HWPCall(climate::ClimateCall call, PoolHeater &parent, heat_pump_data_t &data, text_sensor::TextSensor *sensor)
-      : call_(call), parent_(parent), data_(data), sensor_(sensor) {}
-  
-  void perform(); 
+  /**
+   * @brief Constructor
+   * @param call The original climate call object
+   * @param parent Reference to the parent PoolHeater
+   * @param data Reference to heat pump data struct
+   * @param sensor Optional text sensor to report status
+   */
+  HWPCall(climate::ClimateCall call, PoolHeater &parent, heat_pump_data_t &data,
+          text_sensor::TextSensor *sensor = nullptr)
+      : call_(call), parent_(parent), data_(data), sensor_(sensor), component(nullptr) {}
 
-  climate::ClimateCall get_call() const { return this->call_; }
-  heat_pump_data_t &get_data() const { return this->data_; } 
-  // Use esphome::optional for 2026 toolchain stability
+  /** Perform the call */
+  void perform();
+
+  /** Accessors */
+  climate::ClimateCall get_call() const { return call_; }
+  heat_pump_data_t &get_data() const { return data_; }
+
+  // Optional values for defrost and return differences
   esphome::optional<float> d01_defrost_start;
   esphome::optional<float> d02_defrost_end;
   esphome::optional<float> d03_defrosting_cycle_time_minutes;
@@ -82,24 +89,23 @@ class HWPCall {
   esphome::optional<float> r06_return_diff_heating;
   esphome::optional<float> r07_shutdown_diff_heating;
   esphome::optional<float> u02_pulses_per_liter;
-  
-  // These must match the class forward declarations above
+
+  // Optional references to other modules / components
   esphome::optional<DefrostEcoMode*> d06_defrost_eco_mode;
   esphome::optional<FlowMeterEnable*> u01_flow_meter;
   esphome::optional<HeatPumpRestrict*> h02_mode_restrictions;
   esphome::optional<FanMode*> f01_fan_mode;
+
+  /** Optional pointer to the associated component */
   esphome::Component *component;
-  
+
  protected:
   climate::ClimateCall call_;
   PoolHeater &parent_;
   heat_pump_data_t &data_;
-  text_sensor::TextSensor *sensor_; // 2. Store the pointer here
-  
-
-  //heat_pump_data_t &hp_data;
-  //text_sensor::TextSensor *status_;
+  text_sensor::TextSensor *sensor_;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
