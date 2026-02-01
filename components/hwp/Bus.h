@@ -45,8 +45,16 @@
 #include <vector>
 #include <memory>
 #include "esphome/core/log.h"
+#include "esphome/core/optional.h"
 #include "Decoder.h"
 #include "base_frame.h"
+
+// Forward declaration of climate traits to avoid full include
+namespace esphome {
+namespace climate {
+class ClimateTraits;
+}  // namespace climate
+}  // namespace esphome
 
 namespace esphome {
 namespace hwp {
@@ -73,7 +81,7 @@ class Bus {
   
   std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
 
-  void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
+  void traits(esphome::climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
 
  private:
   BusMode mode;
@@ -96,5 +104,6 @@ class Bus {
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
