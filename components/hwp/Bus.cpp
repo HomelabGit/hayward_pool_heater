@@ -54,7 +54,7 @@
  */
 
 #include "Bus.h"
-#include "esphome/core/helpers.h"
+#include "esphome/core/application.h"  // provides esphome::millis()
 #include "esphome/core/log.h"
 
 namespace esphome {
@@ -76,7 +76,8 @@ void Bus::process_pulse(rmt_symbol_word_t* item) {
 
   for (auto &frame : rx_frames_) {
     if (!frame->is_complete()) {
-      auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
+      // RTTI-free Decoder access
+      Decoder* decoder = frame->as_decoder();
       if (!decoder) continue;
 
       if (Decoder::is_start_frame(item))
@@ -100,7 +101,7 @@ void Bus::process_send_queue() {
   }
 
   sendHeader();
-  previous_sent_packet_ = ::millis();
+  previous_sent_packet_ = esphome::millis();  // <-- fixed
   mode_ = BUSMODE_RX;
 }
 
@@ -110,15 +111,12 @@ void Bus::sendHeader() {
 }
 
 bool Bus::is_controller_timeout() const {
-     return ::millis() > (delay_between_controller_messages_ms * 1.5f);
-    // return esphome::millis() > (delay_between_controller_messages_ms * 1.5f);
+  return esphome::millis() > (delay_between_controller_messages_ms * 1.5f);
 }
 
 bool Bus::is_time_for_next() const {
   if (!previous_sent_packet_) return true;
-  //return esphome::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
-  return ::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
-
+  return esphome::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
 }
 
 esphome::optional<unsigned long> Bus::next_controller_packet() const {
@@ -138,7 +136,7 @@ std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
 void Bus::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
   for (auto &frame : rx_frames_) {
     if (frame->is_complete()) {
-      frame->traits(static_cast<void*>(&traits), hp_data);
+      frame->traits(traits, hp_data);  // <-- removed void* cast
     }
   }
 }
