@@ -40,47 +40,35 @@
  *
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
-
 #pragma once
-
 #include <cstring>
 #include <memory>
+#include <sstream>
 #include "esphome/core/log.h"
 #include "base_frame.h"
-#include "driver/rmt_rx.h"  // Mandatory for rmt_symbol_word_t in 2026
+#include "driver/rmt_rx.h" // rmt_symbol_word_t
 
 namespace esphome {
 namespace hwp {
 
-static constexpr char TAG_DECODING[] = "hwp.decoding";
+inline constexpr char TAG_DECODING[] = "hwp.decoder";
+
+// Forward declaration of missing types
+struct heat_pump_data_t;
 
 class Decoder : public BaseFrame {
  public:
-  // --- Constructors & assignment ---
   Decoder();
   Decoder(const Decoder& other);
   Decoder& operator=(const Decoder& other);
 
-  // --- Frame lifecycle ---
   void reset(const char* msg = "");
-  void start_new_frame();
   std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
-  
-  // --- Bit operations ---
-  void append_bit(bool long_duration);
-
-  // --- Status checks ---
   bool is_valid() const;
-  bool is_complete() const;
-  bool is_started() const;
-  void set_started(bool value);
-  void is_changed(const BaseFrame& frame);  // placeholder for frame change detection
-  bool is_finalized() const { return finalized; }
 
-  // --- Debugging ---
-  void debug(const char* msg = "");
+  void append_bit(bool long_duration);
+  void start_new_frame();
 
-  // --- Pulse helpers (2026 compliant) ---
   static int32_t get_high_duration(const rmt_symbol_word_t* item);
   static uint32_t get_low_duration(const rmt_symbol_word_t* item);
   static bool matches_duration(uint32_t target_us, uint32_t actual_us);
@@ -89,15 +77,28 @@ class Decoder : public BaseFrame {
   static bool is_short_bit(const rmt_symbol_word_t* item);
   static bool is_frame_end(const rmt_symbol_word_t* item);
 
-  // --- Counters ---
-  uint32_t passes_count{0};
+  bool is_started() const;
+  void set_started(bool value);
+  void debug(const char* msg = "");
+  bool is_complete() const;
+  void is_changed(const BaseFrame& frame);
 
- private:
-  uint8_t current_byte_value{0};
-  uint8_t bit_current_index{0};
-  bool started{false};
+  uint32_t passes_count;
+
+ protected:
+  uint8_t current_byte_value;
+  uint8_t bit_current_index;
+  bool started;
+
+  // Constants
+  inline static constexpr uint32_t bit_long_high_duration_ms = 800;
+  inline static constexpr uint32_t bit_low_duration_ms = 500;
+  inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
+  inline static constexpr uint32_t frame_end_threshold_ms = 300;
+  inline static constexpr uint32_t pulse_duration_threshold_us = 150;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
