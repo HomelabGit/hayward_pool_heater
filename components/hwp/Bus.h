@@ -51,6 +51,11 @@
 #include <memory>
 #include <optional>
 
+#ifdef USE_ESP32
+#include "driver/rmt_types.h"
+#endif
+
+
 namespace esphome {
 namespace hwp {
 
