@@ -76,7 +76,7 @@ void Bus::process_pulse(rmt_symbol_word_t* item) {
     if (!frame->is_complete()) {
       //auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
       //if (!decoder) continue;
-      if (frame->get_type() != FrameType::DECODER)
+    if (frame->get_type() != BaseFrame::FrameType::DECODER)
       continue;
       auto *decoder = static_cast<Decoder *>(frame.get());
         
