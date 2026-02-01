@@ -76,7 +76,9 @@ void Decoder::append_bit(bool long_duration) {
   }
 
   if (long_duration) {
-    set_bit(&current_byte_value_, bit_current_index_);
+    //set_bit(&current_byte_value_, bit_current_index_);
+    current_byte_value_ |= (1 << bit_current_index_);
+
   }
 
   bit_current_index_++;
