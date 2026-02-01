@@ -52,10 +52,9 @@
  *
  * Use at your own risk. No warranty is provided.
  */
-
 #include "Bus.h"
-#include "esphome/core/application.h"  // provides esphome::millis()
 #include "esphome/core/log.h"
+#include "esphome/core/helpers.h"
 
 namespace esphome {
 namespace hwp {
@@ -71,13 +70,11 @@ void Bus::start_receive() {
 }
 
 void Bus::process_pulse(rmt_symbol_word_t* item) {
-  if (mode_ == BUSMODE_TX || !item)
-    return;
+  if (mode_ == BUSMODE_TX || !item) return;
 
-  for (auto &frame : rx_frames_) {
+  for (auto& frame : rx_frames_) {
     if (!frame->is_complete()) {
-      // RTTI-free Decoder access
-      Decoder* decoder = frame->as_decoder();
+      auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
       if (!decoder) continue;
 
       if (Decoder::is_start_frame(item))
@@ -101,7 +98,7 @@ void Bus::process_send_queue() {
   }
 
   sendHeader();
-  previous_sent_packet_ = esphome::millis();  // <-- fixed
+  previous_sent_packet_ = esphome::millis();
   mode_ = BUSMODE_RX;
 }
 
@@ -126,23 +123,25 @@ esphome::optional<unsigned long> Bus::next_controller_packet() const {
 
 std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
   std::vector<std::shared_ptr<BaseFrame>> result;
-  for (auto &frame : rx_frames_) {
-    if (!frame->is_complete()) continue;
-    result.push_back(frame);
+  for (auto& frame : rx_frames_) {
+    if (frame->is_complete()) {
+      result.push_back(frame);
+    }
   }
   return result;
 }
 
 void Bus::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
-  for (auto &frame : rx_frames_) {
+  for (auto& frame : rx_frames_) {
     if (frame->is_complete()) {
-      frame->traits(traits, hp_data);  // <-- removed void* cast
+      frame->traits(static_cast<void*>(&traits), hp_data);
     }
   }
 }
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
 
