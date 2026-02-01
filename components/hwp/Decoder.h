@@ -42,60 +42,53 @@
  */
 #pragma once
 
-#include "base_frame.h"
-#include "esphome/core/log.h"
-#include "esphome/core/helpers.h"
+#include <memory>
 #include <vector>
+#include "base_frame.h"
 #include "heat_pump_data.h"
-
-// Ensure rmt_symbol_word_t is defined
-struct rmt_symbol_word_t {
-    uint32_t level0;
-    uint32_t duration0;
-    uint32_t level1;
-    uint32_t duration1;
-};
 
 namespace esphome {
 namespace hwp {
 
+// Forward declaration
+struct rmt_symbol_word_t;
+
 class Decoder : public BaseFrame {
  public:
+  // Constructors
   Decoder() = default;
+  ~Decoder() override = default;
 
-  // RTTI-free cast (optional)
+  // RTTI-free access
   Decoder* as_decoder() override { return this; }
 
-  // Frame manipulation
-  void start_new_frame() {
-    started_ = true;
-    finalized_ = false;
-    bits_.clear();
-  }
+  // Frame processing
+  void start_new_frame();
+  void append_bit(bool bit);
 
-  void append_bit(bool bit) {
-    bits_.push_back(bit);
-  }
-
+  // Overrides BaseFrame
   bool is_complete() const override { return finalized_; }
+  void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) override {}
 
-  void finalize_frame() { finalized_ = true; }
-
-  // Pulse helpers (RMT symbols)
+  // Static helpers for decoding pulses
   static bool is_start_frame(const rmt_symbol_word_t* item);
   static bool is_long_bit(const rmt_symbol_word_t* item);
   static bool is_short_bit(const rmt_symbol_word_t* item);
   static bool is_frame_end(const rmt_symbol_word_t* item);
 
  private:
-  bool started_ = false;
-  bool finalized_ = false;
   std::vector<bool> bits_;
+  bool started_{false};
+  bool finalized_{false};
+
+  // Timing constants (microseconds)
+  static constexpr uint32_t frame_heading_high_duration_ms = 4;
+  static constexpr uint32_t bit_long_high_duration_ms = 2;
+  static constexpr uint32_t frame_end_threshold_ms = 2;
+
+  // Helpers
+  static bool matches_duration(uint32_t target_us, uint32_t actual_us);
 };
 
 }  // namespace hwp
 }  // namespace esphome
-
-
-
-
