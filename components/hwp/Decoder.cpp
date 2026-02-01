@@ -42,41 +42,12 @@
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
 #include "Decoder.h"
+#include "esphome/core/log.h"
+#include "esphome/core/helpers.h"
 #include <sstream>
 
 namespace esphome {
 namespace hwp {
-
-// ---------------- Constructor / Copy ----------------
-
-Decoder::Decoder()
-    : BaseFrame(), passes_count_(0), current_byte_value_(0),
-      bit_current_index_(0), started_(false), finalized_(false) {
-  std::memset(&packet_, 0, sizeof(packet_));
-}
-
-Decoder::Decoder(const Decoder& other)
-    : BaseFrame(other),
-      passes_count_(other.passes_count_),
-      current_byte_value_(other.current_byte_value_),
-      bit_current_index_(other.bit_current_index_),
-      started_(other.started_),
-      finalized_(other.finalized_) {
-  packet_ = other.packet_;
-}
-
-Decoder& Decoder::operator=(const Decoder& other) {
-  if (this != &other) {
-    BaseFrame::operator=(other);
-    current_byte_value_ = other.current_byte_value_;
-    bit_current_index_ = other.bit_current_index_;
-    started_ = other.started_;
-    finalized_ = other.finalized_;
-    passes_count_ = other.passes_count_;
-    packet_ = other.packet_;
-  }
-  return *this;
-}
 
 // ---------------- Frame Control ----------------
 
@@ -89,6 +60,7 @@ void Decoder::reset(const char* msg) {
   current_byte_value_ = 0;
   started_ = false;
   finalized_ = false;
+  source_ = SOURCE_UNKNOWN;
   std::memset(&packet_, 0, sizeof(packet_));
 }
 
@@ -130,18 +102,20 @@ std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
   if (!started_ || packet_.data_len == 0) return nullptr;
 
   bool inverted = false;
-  // Implement your checksum validation logic here
-  if (false /* !is_checksum_valid(inverted) */) return nullptr;
+  // Placeholder: implement checksum validation
+  // if (!is_checksum_valid(inverted)) return nullptr;
 
   finalized_ = true;
+
   auto specialized = std::make_shared<Decoder>(*this);
   specialized->set_frame_time_ms(esphome::millis());
+
   ESP_LOGVV("hwp.decoder", "Frame finalized, type: %s", "DecoderFrame");
   return specialized;
 }
 
 bool Decoder::is_valid() const {
-  return finalized_ && packet_.data_len > 0;
+  return finalized_;
 }
 
 bool Decoder::is_complete() const {
