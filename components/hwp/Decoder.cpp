@@ -101,7 +101,9 @@ void Decoder::append_bit(bool long_duration) {
 // ---------------- Validation / Finalization ----------------
   esphome::millis()
 
-std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
+//std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
+std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& hp_data) {
+  
   if (!started_ || packet_.data_len == 0) return nullptr;
 
   bool inverted = false;
