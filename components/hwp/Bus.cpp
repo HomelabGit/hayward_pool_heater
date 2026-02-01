@@ -40,40 +40,31 @@
  * Use at your own risk. No warranty is provided.
  */
 #include "Bus.h"
-#include "esphome/core/log.h"
-#include "esphome/core/helpers.h"
 
 namespace esphome {
 namespace hwp {
 
-Bus::Bus(size_t rx_buffer_size, size_t tx_buffer_size)
-  : mode(BUSMODE_RX) {
+Bus::Bus(size_t rx_buffer_size, size_t tx_buffer_size) : mode_(BUSMODE_RX) {
   rx_frames_.reserve(rx_buffer_size);
   tx_frames_.reserve(tx_buffer_size);
 }
 
-void Bus::start_receive() {
-  mode = BUSMODE_RX;
-}
+void Bus::start_receive() { mode_ = BUSMODE_RX; }
 
 void Bus::process_pulse(rmt_symbol_word_t* item) {
-  if (mode == BUSMODE_TX) return;
-  if (!item) return;
+  if (mode_ == BUSMODE_TX || !item) return;
 
-  // Handle RMT pulse using Decoder logic
   for (auto &frame : rx_frames_) {
     if (!frame->is_complete()) {
-      // Use virtual as_decoder() instead of dynamic_cast
       Decoder* decoder = frame->as_decoder();
       if (!decoder) continue;
 
-      if (Decoder::is_start_frame(item)) {
+      if (Decoder::is_start_frame(item))
         decoder->start_new_frame();
-      } else if (Decoder::is_long_bit(item)) {
+      else if (Decoder::is_long_bit(item))
         decoder->append_bit(true);
-      } else if (Decoder::is_short_bit(item)) {
+      else if (Decoder::is_short_bit(item))
         decoder->append_bit(false);
-      }
     }
   }
 }
@@ -85,16 +76,12 @@ void Bus::process_send_queue() {
     current_sending_packet_ = tx_frames_.front();
     tx_frames_.erase(tx_frames_.begin());
     ESP_LOGI("hwp.bus", "Sending packet");
-    mode = BUSMODE_TX;
+    mode_ = BUSMODE_TX;
   }
 
-  // Simulate sending (replace with RMT TX logic)
   sendHeader();
-  current_sending_packet_.reset();
-  mode = BUSMODE_RX;
-
-  // Update last sent timestamp
-  previous_sent_packet_ = esphome::millis();
+  previous_sent_packet_ = millis();
+  mode_ = BUSMODE_RX;
 }
 
 void Bus::sendHeader() {
@@ -103,12 +90,12 @@ void Bus::sendHeader() {
 }
 
 bool Bus::is_controller_timeout() const {
-  return esphome::millis() > (delay_between_controller_messages_ms * 1.5f);
+  return millis() > (delay_between_controller_messages_ms * 1.5f);
 }
 
 bool Bus::is_time_for_next() const {
   if (!previous_sent_packet_) return true;
-  return esphome::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
+  return millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
 }
 
 esphome::optional<unsigned long> Bus::next_controller_packet() const {
@@ -125,7 +112,7 @@ std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
   return result;
 }
 
-void Bus::traits(esphome::climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
+void Bus::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
   for (auto &frame : rx_frames_) {
     if (frame->is_complete()) {
       frame->traits(traits, hp_data);
@@ -135,5 +122,6 @@ void Bus::traits(esphome::climate::ClimateTraits& traits, heat_pump_data_t& hp_d
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
