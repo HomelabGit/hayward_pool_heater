@@ -41,10 +41,11 @@
  *
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
-#include <iomanip>
 #include "Decoder.h"
 #include "esphome/core/log.h"
-
+#include "esphome/core/helpers.h"
+#include <sstream>
+#include <cstring>
 
 namespace esphome {
 namespace hwp {
@@ -52,22 +53,29 @@ namespace hwp {
 // ---------------- Constructor / Copy ----------------
 
 Decoder::Decoder()
-    : BaseFrame(), passes_count(0), current_byte_value(0), bit_current_index(0), started(false) {}
+    : BaseFrame(), passes_count_(0), current_byte_value_(0), bit_current_index_(0), started_(false), finalized_(false) {
+  std::memset(&packet_, 0, sizeof(packet_));
+}
 
 Decoder::Decoder(const Decoder& other)
     : BaseFrame(other),
-      passes_count(other.passes_count),
-      current_byte_value(other.current_byte_value),
-      bit_current_index(other.bit_current_index),
-      started(other.started) {}
+      passes_count_(other.passes_count_),
+      current_byte_value_(other.current_byte_value_),
+      bit_current_index_(other.bit_current_index_),
+      started_(other.started_),
+      finalized_(other.finalized_) {
+  packet_ = other.packet_;
+}
 
 Decoder& Decoder::operator=(const Decoder& other) {
   if (this != &other) {
     BaseFrame::operator=(other);
-    current_byte_value = other.current_byte_value;
-    bit_current_index = other.bit_current_index;
-    started = other.started;
-    passes_count = other.passes_count;
+    current_byte_value_ = other.current_byte_value_;
+    bit_current_index_ = other.bit_current_index_;
+    started_ = other.started_;
+    finalized_ = other.finalized_;
+    passes_count_ = other.passes_count_;
+    packet_ = other.packet_;
   }
   return *this;
 }
@@ -75,54 +83,54 @@ Decoder& Decoder::operator=(const Decoder& other) {
 // ---------------- Frame Control ----------------
 
 void Decoder::reset(const char* msg) {
-  if (started && msg && strlen(msg) > 0) {
-    ESP_LOGV(TAG_DECODING, "Decoder reset: %s", msg);
+  if (started_ && msg && strlen(msg) > 0) {
+    ESP_LOGV("hwp.decoder", "Decoder reset: %s", msg);
   }
-  passes_count = 0;
-  bit_current_index = 0;
-  current_byte_value = 0;
-  started = false;
-
-  // Safe packet reset
-  std::memset(&packet, 0, sizeof(packet));
-  finalized = false;
+  passes_count_ = 0;
+  bit_current_index_ = 0;
+  current_byte_value_ = 0;
+  started_ = false;
+  finalized_ = false;
   source_ = SOURCE_UNKNOWN;
+  std::memset(&packet_, 0, sizeof(packet_));
 }
 
 void Decoder::start_new_frame() {
   reset("Start of new frame");
-  started = true;
+  started_ = true;
 }
 
 void Decoder::append_bit(bool long_duration) {
-  if (!started) {
-    ESP_LOGW(TAG_DECODING, "Frame not started. Ignoring bit");
+  if (!started_) {
+    ESP_LOGW("hwp.decoder", "Frame not started. Ignoring bit");
     return;
   }
+
   if (long_duration) {
-    set_bit(&current_byte_value, bit_current_index);
+    set_bit(&current_byte_value_, bit_current_index_);
   }
-  bit_current_index++;
-  if (bit_current_index == 8) {
-    if (packet.data_len < sizeof(packet.data)) {
-      ESP_LOGVV(TAG_DECODING, "New byte #%u: 0x%02X", packet.data_len, current_byte_value);
-      packet.data[packet.data_len] = current_byte_value;
+
+  bit_current_index_++;
+
+  if (bit_current_index_ == 8) {
+    if (packet_.data_len < sizeof(packet_.data)) {
+      ESP_LOGVV("hwp.decoder", "New byte #%u: 0x%02X", packet_.data_len, current_byte_value_);
+      packet_.data[packet_.data_len] = current_byte_value_;
     } else {
-      ESP_LOGW(TAG_DECODING, "Frame overflow %u/%u. Dropped byte: 0x%02X",
-               packet.data_len, sizeof(packet.data), current_byte_value);
+      ESP_LOGW("hwp.decoder", "Frame overflow %u/%u. Dropped byte: 0x%02X",
+               packet_.data_len, sizeof(packet_.data), current_byte_value_);
     }
-    bit_current_index = 0;
-    current_byte_value = 0;
-    packet.data_len++;
+
+    bit_current_index_ = 0;
+    current_byte_value_ = 0;
+    packet_.data_len++;
   }
 }
 
 // ---------------- Validation / Finalization ----------------
 
 std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
-  if (!started || !is_size_valid()) {
-    return nullptr;
-  }
+  if (!started_ || !is_size_valid()) return nullptr;
 
   bool inverted = false;
   if (!is_checksum_valid(inverted)) return nullptr;
@@ -133,20 +141,22 @@ std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
   } else {
     source_ = SOURCE_CONTROLLER;
   }
-  finalized = true;
 
-  auto specialized = process(/*hp_data*/);
+  finalized_ = true;
+
+  auto specialized = std::make_shared<Decoder>(*this);  // placeholder for specialized frame
   specialized->set_frame_time_ms(millis());
-  ESP_LOGVV(TAG_DECODING, "Frame finalized, type: %s", specialized->type_string());
+
+  ESP_LOGVV("hwp.decoder", "Frame finalized, type: %s", "DecoderFrame");
   return specialized;
 }
 
 bool Decoder::is_valid() const {
-  return finalized && BaseFrame::is_valid();
+  return finalized_ && BaseFrame::is_valid();
 }
 
 bool Decoder::is_complete() const {
-  return started && is_size_valid() && is_checksum_valid();
+  return started_ && is_size_valid() && is_checksum_valid();
 }
 
 void Decoder::is_changed(const BaseFrame& /*frame*/) {
@@ -155,23 +165,21 @@ void Decoder::is_changed(const BaseFrame& /*frame*/) {
 
 // ---------------- Status ----------------
 
-bool Decoder::is_started() const { return started; }
-void Decoder::set_started(bool value) { started = value; }
+bool Decoder::is_started() const { return started_; }
+void Decoder::set_started(bool value) { started_ = value_; }
 
 void Decoder::debug(const char* msg) {
-  if (!msg || strlen(msg) == 0 || packet.data_len == 0) return;
+  if (!msg || packet_.data_len == 0) return;
 
   std::stringstream oss;
-  BaseFrame inv_bf(*this);
-  inv_bf.inverse();
-  oss << (started ? "STARTED" : "NOT STARTED") << ", "
-      << (finalized ? "FINALIZED" : "NOT FINALIZED") << ", "
-      << " data_len: " << static_cast<int>(packet.data_len)
-      << " current_byte_value: " << std::hex << static_cast<int>(current_byte_value)
-      << " bit_index: " << std::dec << static_cast<int>(bit_current_index)
-      << " checksum: " << std::hex << static_cast<int>(packet.calculate_checksum())
-      << " inv checksum: " << static_cast<int>(inv_bf.packet.calculate_checksum());
-  ESP_LOGV(TAG_DECODING, "%s%s", msg, oss.str().c_str());
+  oss << (started_ ? "STARTED" : "NOT STARTED")
+      << ", " << (finalized_ ? "FINALIZED" : "NOT FINALIZED")
+      << ", data_len: " << static_cast<int>(packet_.data_len)
+      << ", current_byte_value: " << std::hex << static_cast<int>(current_byte_value_)
+      << ", bit_index: " << std::dec << static_cast<int>(bit_current_index_)
+      << ", checksum: " << std::hex << static_cast<int>(packet_.calculate_checksum());
+
+  ESP_LOGV("hwp.decoder", "%s%s", msg, oss.str().c_str());
 }
 
 // ---------------- RMT / Pulse Utils ----------------
@@ -208,6 +216,7 @@ bool Decoder::is_frame_end(const rmt_symbol_word_t* item) {
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
 
