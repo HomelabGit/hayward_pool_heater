@@ -41,8 +41,10 @@
  *
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
-#include "Decoder.h"
 #include <iomanip>
+#include "Decoder.h"
+#include "esphome/core/log.h"
+
 
 namespace esphome {
 namespace hwp {
