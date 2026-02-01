@@ -31,35 +31,26 @@
  * for any damage or loss caused by the use of this software.
  */
 #pragma once
-#include <cstdint>
 #include <memory>
-#include "esphome/core/log.h"
-#include "driver/rmt_rx.h"
+#include "heat_pump_data.h"  // your heat pump data struct
+#include "esphome/components/climate/climate_traits.h"
 
 namespace esphome {
 namespace hwp {
 
-// Forward declaration
-struct heat_pump_data_t;
+class Decoder;  // forward declaration
 
-// Base frame class
 class BaseFrame {
-public:
-    BaseFrame() = default;
-    virtual ~BaseFrame() = default;
+ public:
+  virtual ~BaseFrame() = default;
 
-    virtual void start_new_frame() {}
-    virtual void append_bit(bool long_bit) {}
-    virtual std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data) { return nullptr; }
-    virtual bool is_complete() const { return false; }
+  virtual bool is_complete() const { return true; }
 
-    // Optional traits for Climate integration
-    virtual void traits(void* /*traits*/, heat_pump_data_t& /*hp_data*/) {}
+  // For traits (climate integration)
+  virtual void traits(climate::ClimateTraits& /*traits*/, heat_pump_data_t& /*hp_data*/) {}
 
-    // Public packet access
-    uint8_t data_[256]{0};
-    uint8_t data_len_{0};
-    bool finalized_{false};
+  // RTTI-free Decoder access
+  virtual Decoder* as_decoder() { return nullptr; }
 };
 
 }  // namespace hwp
