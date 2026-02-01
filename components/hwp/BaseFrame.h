@@ -10,7 +10,7 @@ namespace hwp {
 
 // Forward declare heat pump data
 struct heat_pump_data_t;
-
+class Decoder;  // forward declaration
 
 // Base class for all frames
 class BaseFrame {
