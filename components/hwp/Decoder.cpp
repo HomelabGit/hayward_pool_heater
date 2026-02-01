@@ -30,107 +30,125 @@
  * @disclaimer Use at your own risk. The developer assumes no responsibility
  * for any damage or loss caused by the use of this software.
  */
+/**
+ * @file Decoder.cpp
+ * @brief Implements the Decoder class for parsing bit-banged bus frames.
+ *
+ * MIT License
+ * Copyright (c) 2024 S. Leclerc
+ *
+ * Use at your own risk. No warranty is provided.
+ *
+ * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
+ */
 
-/* Compliant 2026 */
 #include "Decoder.h"
 #include "base_frame.h"
 #include "esphome/core/log.h"
-#include "driver/rmt_rx.h"  // Mandatory for ESP-IDF v6.0 (2026)
+#include "driver/rmt_rx.h"
 #include <iomanip>
 #include <sstream>
 
 namespace esphome {
 namespace hwp {
 
-static const char *const TAG = "hwp.decoder";
+static constexpr char TAG_DECODING[] = "hwp.decoder";
 
 Decoder::Decoder()
-    : BaseFrame(), passes_count(0), current_byte_value(0), bit_current_index(0), started(false) {}
+    : BaseFrame(),
+      passes_count(0),
+      current_byte_value(0),
+      bit_current_index(0),
+      started(false) {}
 
 Decoder::Decoder(const Decoder& other)
-    : BaseFrame(other), passes_count(0), current_byte_value(other.current_byte_value),
-      bit_current_index(other.bit_current_index), started(other.started) {}
+    : BaseFrame(other),
+      passes_count(other.passes_count),
+      current_byte_value(other.current_byte_value),
+      bit_current_index(other.bit_current_index),
+      started(other.started) {}
 
 Decoder& Decoder::operator=(const Decoder& other) {
     if (this != &other) {
         BaseFrame::operator=(other);
+        passes_count = other.passes_count;
         current_byte_value = other.current_byte_value;
         bit_current_index = other.bit_current_index;
         started = other.started;
-        passes_count = other.passes_count;
     }
     return *this;
 }
 
 void Decoder::reset(const char* msg) {
-    bool debug_status = log_active(TAG_DECODING);
-
-    if (this->started) {
-        if (debug_status && strlen(msg) > 0) {
-            debug(msg);
-        }
+    if (started && log_active(TAG_DECODING) && msg && strlen(msg) > 0) {
+        debug(msg);
     }
-    this->passes_count = 0;
-    this->bit_current_index = 0;
-    this->current_byte_value = 0;
-    this->started = false;
-    this->finalized = false;
-    this->source_ = SOURCE_UNKNOWN;
-    this->packet.reset();
+
+    passes_count = 0;
+    bit_current_index = 0;
+    current_byte_value = 0;
+    started = false;
+    finalized = false;
+    source_ = SOURCE_UNKNOWN;
+    packet.reset();
 }
 
 std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& hp_data) {
+    if (!started || !is_size_valid()) {
+        return nullptr;
+    }
+
     bool inverted = false;
-    this->source_ = SOURCE_UNKNOWN;
-    this->finalized = false;
     std::shared_ptr<BaseFrame> specialized = nullptr;
-    
-    if (!started) {
-        return nullptr;
-    }
-    if (!this->is_size_valid()) {
-        return nullptr;
-    }
 
     if (is_checksum_valid(inverted)) {
         if (inverted) {
             inverse();
-            this->source_ = SOURCE_HEATER;
+            source_ = SOURCE_HEATER;
         } else {
-            this->source_ = SOURCE_CONTROLLER;
+            source_ = SOURCE_CONTROLLER;
         }
+
         finalized = true;
         specialized = process(hp_data);
         specialized->set_frame_time_ms(millis());
-        ESP_LOGVV(TAG_DECODING, "Finalize()->frame is %s with type %s",
-            this->finalized ? "FINALIZED" : "NOT FINALIZED", specialized->type_string());
-        return specialized;
+
+        ESP_LOGVV(TAG_DECODING, "Finalize()->frame %s, type %s",
+                  finalized ? "FINALIZED" : "NOT FINALIZED",
+                  specialized->type_string());
     }
-    return nullptr;
+
+    return specialized;
 }
 
-bool Decoder::is_valid() const { return (finalized && BaseFrame::is_valid()); }
+bool Decoder::is_valid() const {
+    return finalized && BaseFrame::is_valid();
+}
 
 void Decoder::append_bit(bool long_duration) {
     if (!started) {
         ESP_LOGW(TAG_DECODING, "Frame not started. Ignoring bit");
         return;
     }
+
     if (long_duration) {
         set_bit(&current_byte_value, bit_current_index);
     }
+
     bit_current_index++;
+
     if (bit_current_index == 8) {
-        if (this->packet.data_len < sizeof(this->packet.data)) {
-            ESP_LOGVV(TAG_DECODING, "New byte #%u: 0X%02X", this->packet.data_len, current_byte_value);
-            this->packet.data[this->packet.data_len] = current_byte_value;
+        if (packet.data_len < sizeof(packet.data)) {
+            ESP_LOGVV(TAG_DECODING, "New byte #%u: 0x%02X", packet.data_len, current_byte_value);
+            packet.data[packet.data_len] = current_byte_value;
         } else {
-            ESP_LOGW(TAG_DECODING, "Frame overflow %u/%u. New byte: 0X%2X", this->packet.data_len,
-                sizeof(this->packet.data), current_byte_value);
+            ESP_LOGW(TAG_DECODING, "Frame overflow %u/%u. Dropped byte: 0x%02X",
+                     packet.data_len, sizeof(packet.data), current_byte_value);
         }
+
         bit_current_index = 0;
         current_byte_value = 0;
-        this->packet.data_len++;
+        packet.data_len++;
     }
 }
 
@@ -139,87 +157,77 @@ void Decoder::start_new_frame() {
     started = true;
 }
 
-/** 
- * 2026 Logic: rmt_symbol_word_t represents a single pulse.
- * We check the .level to determine if it's High or Low.
- */
+// --- Pulse duration helpers ---
 int32_t Decoder::get_high_duration(const rmt_symbol_word_t* item) {
-    return (item->level0) ? (int32_t)item->duration0 : 0;
+    return (item->level0) ? static_cast<int32_t>(item->duration0) : 0;
 }
 
 uint32_t Decoder::get_low_duration(const rmt_symbol_word_t* item) {
-    return (!item->level0) ? (uint32_t)item->duration0 : 0;
+    return (!item->level0) ? static_cast<uint32_t>(item->duration0) : 0;
 }
 
 bool Decoder::matches_duration(uint32_t target_us, uint32_t actual_us) {
-    return actual_us >= (target_us - pulse_duration_threshold_us) &&
-           actual_us <= (target_us + pulse_duration_threshold_us);
+    return actual_us >= target_us - pulse_duration_threshold_us &&
+           actual_us <= target_us + pulse_duration_threshold_us;
 }
 
+// --- Pulse type checks ---
 bool Decoder::is_start_frame(const rmt_symbol_word_t* item) {
-    // 2026: Check high level and duration in one symbol
     return item->level0 && matches_duration(frame_heading_high_duration_ms * 1000, item->duration0);
-
 }
 
 bool Decoder::is_long_bit(const rmt_symbol_word_t* item) {
-    // In 2026 single-symbol mode, this checks if THIS pulse is a long high bit.
-    // Logic for paired low pulse should be handled in the calling loop.
     return item->level0 && matches_duration(bit_long_high_duration_ms * 1000, item->duration0);
-
 }
 
 bool Decoder::is_short_bit(const rmt_symbol_word_t* item) {
-    // 2026: Access .duration directly. No union field required.
-    return (item->duration0 > 400 && item->duration0 < 600);
-
+    return item->duration0 > 400 && item->duration0 < 600;
 }
 
 bool Decoder::is_frame_end(const rmt_symbol_word_t* item) {
-    // 2026: A duration of 0 or a threshold-matching low pulse indicates end.
-    return item->duration0 == 0 || 
-       (!item->level0 && matches_duration(frame_end_threshold_ms * 1000, item->duration0));
+    return item->duration0 == 0 ||
+           (!item->level0 && matches_duration(frame_end_threshold_ms * 1000, item->duration0));
 }
 
+// --- State getters/setters ---
 bool Decoder::is_started() const { return started; }
-
 void Decoder::set_started(bool value) { started = value; }
 
+// --- Debugging ---
 void Decoder::debug(const char* msg) {
-    std::stringstream oss;
-    bool debug_status = log_active(TAG_DECODING);
+    if (!msg || strlen(msg) == 0 || packet.data_len == 0) return;
 
-    if (this->packet.data_len == 0 || strlen(msg) == 0) return;
-
-    BaseFrame inv_bf = BaseFrame(*this);
+    BaseFrame inv_bf(*this);
     inv_bf.inverse();
-    oss << " " << (started ? "STARTED" : "NOT STARTED") << ", "
-        << (finalized ? "FINALIZED" : "NOT FINALIZED") << ", "
-        << " data_len: " << std::dec << static_cast<int>(this->packet.data_len)
-        << " current_byte_value: " << std::setw(2) << std::hex << (int)current_byte_value
-        << " bit_current_index: " << std::dec << static_cast<int>(bit_current_index)
-        << " checksum: " << std::setw(2) << std::hex
-        << static_cast<int>(this->packet.calculate_checksum()) << " inv checksum: " << std::setw(2)
-        << std::hex << static_cast<int>(inv_bf.packet.calculate_checksum());
-    
-    std::string status = oss.str();
-    ESP_LOGV(TAG_DECODING, "%s%s", msg, status.c_str());
 
-    if (debug_status && (is_size_valid())) {
+    std::stringstream oss;
+    oss << " " << (started ? "STARTED" : "NOT STARTED")
+        << ", " << (finalized ? "FINALIZED" : "NOT FINALIZED")
+        << ", data_len: " << std::dec << static_cast<int>(packet.data_len)
+        << ", current_byte_value: 0x" << std::setw(2) << std::hex << (int)current_byte_value
+        << ", bit_index: " << std::dec << static_cast<int>(bit_current_index)
+        << ", checksum: 0x" << std::setw(2) << std::hex
+        << static_cast<int>(packet.calculate_checksum())
+        << ", inv_checksum: 0x" << std::setw(2) << std::hex
+        << static_cast<int>(inv_bf.packet.calculate_checksum());
+
+    ESP_LOGV(TAG_DECODING, "%s%s", msg, oss.str().c_str());
+
+    if (log_active(TAG_DECODING) && is_size_valid()) {
         debug_print_hex();
         inv_bf.debug_print_hex();
     }
 }
 
 bool Decoder::is_complete() const {
-    return this->started && this->is_size_valid() && this->is_checksum_valid();
+    return started && is_size_valid() && is_checksum_valid();
 }
 
 void Decoder::is_changed(const BaseFrame& frame) {
-    // Implementation for checking changes between frames.
+    // Placeholder: implement change detection logic if needed.
 }
 
-} // namespace hwp
-} // namespace esphome
+}  // namespace hwp
+}  // namespace esphome
 
 
