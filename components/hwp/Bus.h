@@ -84,7 +84,8 @@ class Bus {
   esphome::optional<unsigned long> next_controller_packet() const;
 
   /** Access received frames */
-  std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
+  //std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
+  std::vector<std::shared_ptr<BaseFrame>> control();
 
   /** Update climate traits based on frames */
   void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
