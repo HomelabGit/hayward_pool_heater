@@ -41,9 +41,20 @@
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
 #pragma once
+
 #include "base_frame.h"
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
+#include <vector>
+#include "heat_pump_data.h"
+
+// Ensure rmt_symbol_word_t is defined
+struct rmt_symbol_word_t {
+    uint32_t level0;
+    uint32_t duration0;
+    uint32_t level1;
+    uint32_t duration1;
+};
 
 namespace esphome {
 namespace hwp {
@@ -52,9 +63,10 @@ class Decoder : public BaseFrame {
  public:
   Decoder() = default;
 
-  // RTTI-free cast
+  // RTTI-free cast (optional)
   Decoder* as_decoder() override { return this; }
 
+  // Frame manipulation
   void start_new_frame() {
     started_ = true;
     finalized_ = false;
@@ -69,6 +81,7 @@ class Decoder : public BaseFrame {
 
   void finalize_frame() { finalized_ = true; }
 
+  // Pulse helpers (RMT symbols)
   static bool is_start_frame(const rmt_symbol_word_t* item);
   static bool is_long_bit(const rmt_symbol_word_t* item);
   static bool is_short_bit(const rmt_symbol_word_t* item);
@@ -82,6 +95,7 @@ class Decoder : public BaseFrame {
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
 
