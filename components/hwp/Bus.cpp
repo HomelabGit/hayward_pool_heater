@@ -121,8 +121,13 @@ esphome::optional<unsigned long> Bus::next_controller_packet() const {
   return previous_sent_packet_.value_or(0) + delay_between_controller_messages_ms;
 }
 
-std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
-  std::vector<std::shared_ptr<BaseFrame>> result;
+//std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
+std::vector<std::shared_ptr<BaseFrame>> Bus::control() {
+
+   // std::vector<std::shared_ptr<BaseFrame>> result;
+    std::vector<std::shared_ptr<BaseFrame>> result;
+    return result;
+
   for (auto& frame : rx_frames_) {
     if (frame->is_complete()) {
       result.push_back(frame);
