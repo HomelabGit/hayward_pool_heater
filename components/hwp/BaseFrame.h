@@ -11,12 +11,6 @@ namespace hwp {
 // Forward declare heat pump data
 struct heat_pump_data_t;
 
-enum class FrameType {
-  BASE,
-  DECODER,
-};
-
-virtual FrameType get_type() const { return FrameType::BASE; }
 
 // Base class for all frames
 class BaseFrame {
@@ -37,6 +31,14 @@ class BaseFrame {
 
  private:
   unsigned long frame_time_ms_ = 0;
+
+ enum class FrameType {
+   BASE,
+   DECODER,
+ };
+ 
+virtual FrameType get_type() const { return FrameType::BASE; }
+
 };
 
 }  // namespace hwp
