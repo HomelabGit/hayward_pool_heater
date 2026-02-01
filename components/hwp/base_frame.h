@@ -31,105 +31,99 @@
  * for any damage or loss caused by the use of this software.
  */
 #pragma once
-
-#include "esphome/core/optional.h"
-#include "esphome/core/log.h"
-#include <vector>
-#include <memory>
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
-#include <iomanip>
+#include <memory>
 #include <sstream>
+#include "esphome/core/log.h"
 
 namespace esphome {
 namespace hwp {
 
-static const char* TAG_BF = "base_frame";
+// Forward declarations
+struct heat_pump_data_t;
 
+// Frame source enum
+enum frame_source_t { SOURCE_UNKNOWN = 0, SOURCE_CONTROLLER, SOURCE_HEATER };
+
+// Packet data structure
 struct hp_packetdata_t {
-    uint8_t data[12]{0};
-    size_t data_len{0};
+  static constexpr size_t MAX_DATA_LEN = 64;
+  uint8_t data[MAX_DATA_LEN]{0};
+  uint8_t data_len{0};
 
-    bool operator!=(const hp_packetdata_t& other) const {
-        if (data_len != other.data_len) return true;
-        return std::memcmp(data, other.data, data_len) != 0;
-    }
-    uint8_t get_type() const { return data_len > 0 ? data[0] : 0; }
+  void reset() {
+    std::memset(data, 0, sizeof(data));
+    data_len = 0;
+  }
 
-    bool is_checksum_valid() const;
-    uint8_t bus_checksum() const;
-    uint8_t calculate_checksum() const;
-    std::string explain_checksum() const;
+  uint8_t calculate_checksum() const {
+    uint8_t sum = 0;
+    for (size_t i = 0; i < data_len; ++i)
+      sum += data[i];
+    return sum;
+  }
 };
 
-enum frame_source_t { SOURCE_UNKNOWN, SOURCE_HEATER, SOURCE_CONTROLLER, SOURCE_LOCAL };
-
+// BaseFrame class
 class BaseFrame {
-public:
-    BaseFrame();
-    BaseFrame(const BaseFrame& other);
-    BaseFrame(BaseFrame&& other) noexcept;
-    BaseFrame(const BaseFrame* other);
+ public:
+  BaseFrame() = default;
+  BaseFrame(const BaseFrame& other)
+      : packet(other.packet), finalized(other.finalized), source_(other.source_) {}
 
-    uint8_t& operator[](size_t index);
-    const uint8_t& operator[](size_t index) const;
-    BaseFrame& operator=(const BaseFrame& other);
+  BaseFrame& operator=(const BaseFrame& other) {
+    if (this != &other) {
+      packet = other.packet;
+      finalized = other.finalized;
+      source_ = other.source_;
+    }
+    return *this;
+  }
 
-    static std::vector<BaseFrame>& get_registry();
+  virtual ~BaseFrame() = default;
 
-    bool is_changed() const;
-    bool is_size_valid() const;
-    bool is_valid() const;
-    bool is_checksum_valid() const;
-    bool is_checksum_valid(bool& inverted) const;
-    bool has_previous_data() const;
-    bool is_short_frame() const;
-    bool is_long_frame() const;
+  // Check if frame is valid
+  virtual bool is_valid() const {
+    return (packet.data_len > 0 && is_size_valid() && is_checksum_valid());
+  }
 
-    size_t get_data_len() const;
-    size_t get_type_id() const;
-    frame_source_t get_source() const;
-    void set_source(frame_source_t source);
-    uint32_t get_frame_age_ms() const;
-    uint32_t get_frame_time_ms() const;
-    void set_frame_time_ms(uint32_t frame_time);
-    void set_frame_time_ms();
+  // Inverse frame bytes
+  virtual void inverse() {
+    for (size_t i = 0; i < packet.data_len; ++i)
+      packet.data[i] = ~packet.data[i];
+  }
 
-    std::shared_ptr<BaseFrame> get_specialized();
-    std::shared_ptr<BaseFrame> process(hp_packetdata_t& hp_data);
+  // Traits for climate/heatpump integration
+  virtual void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {}
 
-    void stage(const BaseFrame& base);
-    void transfer();
-    void parse(hp_packetdata_t& data);
-    void initialize();
+  // Size check (example: min 4 bytes, max MAX_DATA_LEN)
+  virtual bool is_size_valid() const { return packet.data_len >= 4 && packet.data_len <= hp_packetdata_t::MAX_DATA_LEN; }
 
-    void debug_print_hex() const;
-    template <size_t N>
-    void debug_print_hex(const uint8_t (&buffer)[N], const size_t length, frame_source_t source);
+  // Checksum validation
+  virtual bool is_checksum_valid(bool& inverted = *(new bool(false))) const {
+    if (packet.data_len == 0) return false;
+    uint8_t checksum = packet.calculate_checksum();
+    if (checksum == 0) {
+      inverted = true;
+      return true;
+    }
+    inverted = false;
+    return true;
+  }
 
-    void print(const std::string& prefix, const char* tag, int min_level, int line) const;
-    void print_prev(const std::string& prefix, const char* tag, int min_level, int line) const;
+  // Frame time (ms)
+  void set_frame_time_ms(uint32_t time) { frame_time_ms_ = time; }
+  uint32_t get_frame_time_ms() const { return frame_time_ms_; }
 
-    std::string format(bool no_diff = false) const;
-    std::string format_prev() const;
-    std::string to_string(const std::string& prefix = "") const;
-
-    static uint8_t reverse_bits(unsigned char x);
-    static const char* source_string(frame_source_t source);
-
-private:
-    hp_packetdata_t packet;
-    optional<hp_packetdata_t> prev_;
-    size_t transmitBitIndex{0};
-    bool finalized{false};
-    frame_source_t source_{SOURCE_UNKNOWN};
-    uint32_t frame_time_ms_{0};
-    size_t type_id_{0};
-
-    static std::vector<BaseFrame> registry_;
+ protected:
+  hp_packetdata_t packet;
+  bool finalized{false};
+  frame_source_t source_{SOURCE_UNKNOWN};
+  uint32_t frame_time_ms_{0};
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
