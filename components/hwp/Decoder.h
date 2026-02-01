@@ -29,55 +29,75 @@
  * for any damage or loss caused by the use of this software.
  */
 
-/* 2026 Compliant */
+/**
+ * @file Decoder.h
+ * @brief Decoder class for parsing bit-banged bus frames.
+ *
+ * MIT License
+ * Copyright (c) 2024 S. Leclerc
+ *
+ * Use at your own risk. No warranty is provided.
+ *
+ * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
+ */
 
 #pragma once
+
 #include <cstring>
 #include <memory>
 #include "esphome/core/log.h"
 #include "base_frame.h"
-#include "driver/rmt_rx.h" // Mandatory for rmt_symbol_word_t in 2026
+#include "driver/rmt_rx.h"  // Mandatory for rmt_symbol_word_t in 2026
 
 namespace esphome {
-  namespace hwp {
-    static constexpr char TAG_DECODING[] = "hwp.decoding";
+namespace hwp {
 
-    class Decoder : public BaseFrame {
-    public:
-      Decoder();
-      Decoder(const Decoder& other);
-      Decoder& operator=(const Decoder& other);
+static constexpr char TAG_DECODING[] = "hwp.decoding";
 
-      void reset(const char* msg = "");
-      std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
-      bool is_valid() const;
-      void append_bit(bool long_duration);
-      void start_new_frame();
+class Decoder : public BaseFrame {
+ public:
+  // --- Constructors & assignment ---
+  Decoder();
+  Decoder(const Decoder& other);
+  Decoder& operator=(const Decoder& other);
 
-      // 2026 Updates: Changed rmt_item32_t to rmt_symbol_word_t
-      static int32_t get_high_duration(const rmt_symbol_word_t* item);
-      static uint32_t get_low_duration(const rmt_symbol_word_t* item);
-      static bool matches_duration(uint32_t target_us, uint32_t actual_us);
-      static bool is_start_frame(const rmt_symbol_word_t* item);
-      static bool is_long_bit(const rmt_symbol_word_t* item);
-      static bool is_short_bit(const rmt_symbol_word_t* item);
-      static bool is_frame_end(const rmt_symbol_word_t* item);
+  // --- Frame lifecycle ---
+  void reset(const char* msg = "");
+  void start_new_frame();
+  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
+  
+  // --- Bit operations ---
+  void append_bit(bool long_duration);
 
-      bool is_started() const;
-      void set_started(bool value);
-      void debug(const char* msg = "");
-      bool is_complete() const;
-      void is_changed(const BaseFrame& frame);
-      
-      uint32_t passes_count;
-      bool is_finalized() const { return finalized; }
+  // --- Status checks ---
+  bool is_valid() const;
+  bool is_complete() const;
+  bool is_started() const;
+  void set_started(bool value);
+  void is_changed(const BaseFrame& frame);  // placeholder for frame change detection
+  bool is_finalized() const { return finalized; }
 
-    private:
-      uint8_t current_byte_value;
-      uint8_t bit_current_index;
-      bool started;
-    };
+  // --- Debugging ---
+  void debug(const char* msg = "");
 
-  }  // namespace hwp
+  // --- Pulse helpers (2026 compliant) ---
+  static int32_t get_high_duration(const rmt_symbol_word_t* item);
+  static uint32_t get_low_duration(const rmt_symbol_word_t* item);
+  static bool matches_duration(uint32_t target_us, uint32_t actual_us);
+  static bool is_start_frame(const rmt_symbol_word_t* item);
+  static bool is_long_bit(const rmt_symbol_word_t* item);
+  static bool is_short_bit(const rmt_symbol_word_t* item);
+  static bool is_frame_end(const rmt_symbol_word_t* item);
+
+  // --- Counters ---
+  uint32_t passes_count{0};
+
+ private:
+  uint8_t current_byte_value{0};
+  uint8_t bit_current_index{0};
+  bool started{false};
+};
+
+}  // namespace hwp
 }  // namespace esphome
 
