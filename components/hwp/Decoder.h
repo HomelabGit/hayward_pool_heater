@@ -41,64 +41,75 @@
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
 #pragma once
-#include <cstring>
+#include <cstdint>
 #include <memory>
-#include <sstream>
-#include "esphome/core/log.h"
+#include <cstring>
 #include "base_frame.h"
-#include "driver/rmt_rx.h" // rmt_symbol_word_t
 
 namespace esphome {
 namespace hwp {
 
-inline constexpr char TAG_DECODING[] = "hwp.decoder";
-
-// Forward declaration of missing types
-struct heat_pump_data_t;
-
 class Decoder : public BaseFrame {
- public:
-  Decoder();
-  Decoder(const Decoder& other);
-  Decoder& operator=(const Decoder& other);
+public:
+    Decoder() = default;
+    ~Decoder() override = default;
 
-  void reset(const char* msg = "");
-  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
-  bool is_valid() const;
+    void start_new_frame() override {
+        data_len_ = 0;
+        finalized_ = false;
+        current_byte_ = 0;
+        bit_index_ = 0;
+    }
 
-  void append_bit(bool long_duration);
-  void start_new_frame();
+    void append_bit(bool long_bit) override {
+        if (bit_index_ == 8) {
+            if (data_len_ < sizeof(data_))
+                data_[data_len_++] = current_byte_;
+            current_byte_ = 0;
+            bit_index_ = 0;
+        }
+        current_byte_ <<= 1;
+        if (long_bit)
+            current_byte_ |= 1;
+        ++bit_index_;
+    }
 
-  static int32_t get_high_duration(const rmt_symbol_word_t* item);
-  static uint32_t get_low_duration(const rmt_symbol_word_t* item);
-  static bool matches_duration(uint32_t target_us, uint32_t actual_us);
-  static bool is_start_frame(const rmt_symbol_word_t* item);
-  static bool is_long_bit(const rmt_symbol_word_t* item);
-  static bool is_short_bit(const rmt_symbol_word_t* item);
-  static bool is_frame_end(const rmt_symbol_word_t* item);
+    std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& /*hp_data*/) override {
+        if (bit_index_ > 0 && data_len_ < sizeof(data_))
+            data_[data_len_++] = current_byte_;
+        finalized_ = true;
+        return std::make_shared<Decoder>(*this);
+    }
 
-  bool is_started() const;
-  void set_started(bool value);
-  void debug(const char* msg = "");
-  bool is_complete() const;
-  void is_changed(const BaseFrame& frame);
+    bool is_complete() const override { return finalized_; }
 
-  uint32_t passes_count;
+    // Timing constants
+    inline static constexpr uint32_t bit_long_high_duration_ms = 800;
+    inline static constexpr uint32_t bit_low_duration_ms = 500;
+    inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
+    inline static constexpr uint32_t frame_heading_low_duration_ms = 700;
 
- protected:
-  uint8_t current_byte_value;
-  uint8_t bit_current_index;
-  bool started;
+    static bool is_start_frame(const rmt_symbol_word_t* item) {
+        return item->level0 && item->duration0 >= frame_heading_high_duration_ms * 1000;
+    }
+    static bool is_long_bit(const rmt_symbol_word_t* item) {
+        return item->level0 && item->duration0 >= bit_long_high_duration_ms * 1000;
+    }
+    static bool is_short_bit(const rmt_symbol_word_t* item) {
+        return item->level0 && item->duration0 >= bit_low_duration_ms * 1000 &&
+               item->duration0 < bit_long_high_duration_ms * 1000;
+    }
+    static bool is_frame_end(const rmt_symbol_word_t* item) {
+        return !item->level0;
+    }
 
-  // Constants
-  inline static constexpr uint32_t bit_long_high_duration_ms = 800;
-  inline static constexpr uint32_t bit_low_duration_ms = 500;
-  inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
-  inline static constexpr uint32_t frame_end_threshold_ms = 300;
-  inline static constexpr uint32_t pulse_duration_threshold_us = 150;
+private:
+    uint8_t current_byte_{0};
+    uint8_t bit_index_{0};
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
