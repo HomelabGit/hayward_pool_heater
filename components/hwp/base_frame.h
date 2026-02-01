@@ -32,98 +32,38 @@
  */
 #pragma once
 #include <cstdint>
-#include <cstring>
 #include <memory>
-#include <sstream>
 #include "esphome/core/log.h"
+#include "driver/rmt_rx.h"
 
 namespace esphome {
 namespace hwp {
 
-// Forward declarations
+// Forward declaration
 struct heat_pump_data_t;
 
-// Frame source enum
-enum frame_source_t { SOURCE_UNKNOWN = 0, SOURCE_CONTROLLER, SOURCE_HEATER };
-
-// Packet data structure
-struct hp_packetdata_t {
-  static constexpr size_t MAX_DATA_LEN = 64;
-  uint8_t data[MAX_DATA_LEN]{0};
-  uint8_t data_len{0};
-
-  void reset() {
-    std::memset(data, 0, sizeof(data));
-    data_len = 0;
-  }
-
-  uint8_t calculate_checksum() const {
-    uint8_t sum = 0;
-    for (size_t i = 0; i < data_len; ++i)
-      sum += data[i];
-    return sum;
-  }
-};
-
-// BaseFrame class
+// Base frame class
 class BaseFrame {
- public:
-  BaseFrame() = default;
-  BaseFrame(const BaseFrame& other)
-      : packet(other.packet), finalized(other.finalized), source_(other.source_) {}
+public:
+    BaseFrame() = default;
+    virtual ~BaseFrame() = default;
 
-  BaseFrame& operator=(const BaseFrame& other) {
-    if (this != &other) {
-      packet = other.packet;
-      finalized = other.finalized;
-      source_ = other.source_;
-    }
-    return *this;
-  }
+    virtual void start_new_frame() {}
+    virtual void append_bit(bool long_bit) {}
+    virtual std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data) { return nullptr; }
+    virtual bool is_complete() const { return false; }
 
-  virtual ~BaseFrame() = default;
+    // Optional traits for Climate integration
+    virtual void traits(void* /*traits*/, heat_pump_data_t& /*hp_data*/) {}
 
-  // Check if frame is valid
-  virtual bool is_valid() const {
-    return (packet.data_len > 0 && is_size_valid() && is_checksum_valid());
-  }
-
-  // Inverse frame bytes
-  virtual void inverse() {
-    for (size_t i = 0; i < packet.data_len; ++i)
-      packet.data[i] = ~packet.data[i];
-  }
-
-  // Traits for climate/heatpump integration
-  virtual void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {}
-
-  // Size check (example: min 4 bytes, max MAX_DATA_LEN)
-  virtual bool is_size_valid() const { return packet.data_len >= 4 && packet.data_len <= hp_packetdata_t::MAX_DATA_LEN; }
-
-  // Checksum validation
-  virtual bool is_checksum_valid(bool& inverted = *(new bool(false))) const {
-    if (packet.data_len == 0) return false;
-    uint8_t checksum = packet.calculate_checksum();
-    if (checksum == 0) {
-      inverted = true;
-      return true;
-    }
-    inverted = false;
-    return true;
-  }
-
-  // Frame time (ms)
-  void set_frame_time_ms(uint32_t time) { frame_time_ms_ = time; }
-  uint32_t get_frame_time_ms() const { return frame_time_ms_; }
-
- protected:
-  hp_packetdata_t packet;
-  bool finalized{false};
-  frame_source_t source_{SOURCE_UNKNOWN};
-  uint32_t frame_time_ms_{0};
+    // Public packet access
+    uint8_t data_[256]{0};
+    uint8_t data_len_{0};
+    bool finalized_{false};
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
