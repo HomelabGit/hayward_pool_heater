@@ -45,23 +45,17 @@
 #include <vector>
 #include <memory>
 #include "esphome/core/log.h"
-#include "esphome/core/optional.h"
+#include "esphome/core/helpers.h"
 #include "Decoder.h"
 #include "base_frame.h"
-
-// Forward declaration of climate traits to avoid full include
-namespace esphome {
-namespace climate {
-class ClimateTraits;
-}  // namespace climate
-}  // namespace esphome
+#include "heat_pump_data.h"
+#include "esphome/components/climate/climate_traits.h"
 
 namespace esphome {
 namespace hwp {
 
-// Forward declaration of heat pump control call
-struct HWPCall { 
-  int command; 
+struct HWPCall {
+  int command;
 };
 
 enum BusMode { BUSMODE_RX, BUSMODE_TX };
@@ -74,28 +68,23 @@ class Bus {
   void process_pulse(rmt_symbol_word_t* item);
   void process_send_queue();
   void sendHeader();
-  
+
   bool is_controller_timeout() const;
   bool is_time_for_next() const;
   esphome::optional<unsigned long> next_controller_packet() const;
-  
+
   std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
 
-  void traits(esphome::climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
+  void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
 
  private:
-  BusMode mode;
+  BusMode mode_;
 
-  // Timing constants
   inline static constexpr uint32_t delay_between_controller_messages_ms = 1000;
   inline static constexpr uint32_t delay_between_sending_messages_ms = 150;
-  inline static constexpr uint32_t bit_long_high_duration_ms = Decoder::bit_long_high_duration_ms;
-  inline static constexpr uint32_t bit_low_duration_ms = Decoder::bit_low_duration_ms;
-  inline static constexpr uint32_t frame_heading_high_duration_ms = Decoder::frame_heading_high_duration_ms;
+  inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
   inline static constexpr uint32_t frame_heading_low_duration_ms = 500;
-  inline static constexpr uint32_t controler_frame_spacing_duration_ms = 200;
-  inline static constexpr uint32_t controler_group_spacing_ms = 400;
-  
+
   std::vector<std::shared_ptr<BaseFrame>> rx_frames_;
   std::vector<std::shared_ptr<BaseFrame>> tx_frames_;
   std::shared_ptr<BaseFrame> current_sending_packet_;
