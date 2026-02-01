@@ -18,6 +18,13 @@ class BaseFrame {
   BaseFrame() = default;
   virtual ~BaseFrame() = default;
 
+  enum class FrameType {
+    BASE,
+    DECODER,
+  };
+ 
+virtual FrameType get_type() const { return FrameType::BASE; }
+
   // Must implement to check if frame is valid
   virtual bool is_complete() const = 0;
   virtual bool is_valid() const { return true; }
@@ -32,12 +39,7 @@ class BaseFrame {
  private:
   unsigned long frame_time_ms_ = 0;
 
- enum class FrameType {
-   BASE,
-   DECODER,
- };
  
-virtual FrameType get_type() const { return FrameType::BASE; }
 
 };
 
