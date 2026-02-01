@@ -13,6 +13,9 @@ struct HeatPumpData {
     unsigned long last_update;   // Timestamp of last data update (ms)
 };
 
+// Alias used throughout Bus/Decoder
+using heat_pump_data_t = HeatPumpData;
+
 // Optional: Default initializer
 inline HeatPumpData default_heat_pump_data() {
     HeatPumpData data;
@@ -25,3 +28,6 @@ inline HeatPumpData default_heat_pump_data() {
     data.last_update = 0;
     return data;
 }
+
+
+
