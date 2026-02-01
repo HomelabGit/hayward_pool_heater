@@ -63,6 +63,7 @@ struct heat_pump_data_t;
 // Decoder frame class
 class Decoder : public BaseFrame {
  public:
+  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
   Decoder() = default;
   Decoder(const Decoder& other) = default;
   Decoder& operator=(const Decoder& other) = default;
@@ -75,7 +76,8 @@ class Decoder : public BaseFrame {
   void append_bit(bool long_duration);
 
   // Validation / Finalization
-  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
+ 
+ 
   bool is_valid() const override;
   bool is_complete() const override;
   void is_changed(const BaseFrame& frame);
