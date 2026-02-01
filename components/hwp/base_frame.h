@@ -32,7 +32,7 @@
  */
 #pragma once
 #include <memory>
-#include "heat_pump_data.h"  // your heat pump data struct
+#include "heat_pump_data.h"          // Heat pump data struct
 #include "esphome/components/climate/climate_traits.h"
 
 namespace esphome {
@@ -44,9 +44,10 @@ class BaseFrame {
  public:
   virtual ~BaseFrame() = default;
 
+  // Is this frame complete?
   virtual bool is_complete() const { return true; }
 
-  // For traits (climate integration)
+  // Fill ESPHome climate traits from heat pump data
   virtual void traits(climate::ClimateTraits& /*traits*/, heat_pump_data_t& /*hp_data*/) {}
 
   // RTTI-free Decoder access
