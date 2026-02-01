@@ -11,6 +11,7 @@ namespace hwp {
 // Forward declare heat pump data
 struct heat_pump_data_t;
 
+
 // Base class for all frames
 class BaseFrame {
  public:
