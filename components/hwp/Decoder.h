@@ -59,12 +59,15 @@ namespace hwp {
 // Forward declare heat pump data
 struct heat_pump_data_t;
 
+
 // Decoder frame class
 class Decoder : public BaseFrame {
  public:
   Decoder() = default;
   Decoder(const Decoder& other) = default;
   Decoder& operator=(const Decoder& other) = default;
+
+  FrameType get_type() const override { return FrameType::DECODER; }
 
   // Frame control
   void reset(const char* msg = nullptr);
