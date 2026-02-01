@@ -30,37 +30,68 @@
  * @disclaimer Use at your own risk. The developer assumes no responsibility
  * for any damage or loss caused by the use of this software.
  */
-
 #include "FrameClock.h"
-#include "CS.h"
-#include "Schema.h"
+#include "Decoder.h"
+#include "esphome/core/log.h"
+#include "esphome/core/helpers.h"
+
 namespace esphome {
 namespace hwp {
-CLASS_ID_DECLARATION(esphome::hwp::FrameClock);
+
+// ---------------- Constructor ----------------
+
+FrameClock::FrameClock() : BaseFrame(), data_(std::make_shared<Decoder>()) {}
+
+// ---------------- Factory ----------------
+
 std::shared_ptr<BaseFrame> FrameClock::create() {
-    return std::make_shared<FrameClock>(); // Create a FrameTemperature if type matches
-}
-// FRAME_ID_t FrameClock::get_type() const { return FRAME_CLOCK; }
-const char* FrameClock::type_string() const { return "CLOCK     "; }
-bool FrameClock::matches(BaseFrame& secialized, BaseFrame& base) {
-    return base.packet.get_type() == FRAME_ID_CLOCK;
+  return std::make_shared<FrameClock>();
 }
 
-void FrameClock::parse(heat_pump_data_t& hp_data) { hp_data.time = data_->decode(); }
+// ---------------- Type ----------------
+
+const char* FrameClock::type_string() const {
+  return "CLOCK";
+}
+
+// ---------------- Parse / Decode ----------------
+
+void FrameClock::parse(heat_pump_data_t& hp_data) {
+  if (!data_) return;
+
+  // Example: decode hours/minutes from decoder
+  hp_data.time.hour = data_->packet_.data_len > 0 ? data_->packet_.data[0] : 0;
+  hp_data.time.minute = data_->packet_.data_len > 1 ? data_->packet_.data[1] : 0;
+
+  ESP_LOGVV("hwp.frameclock", "Clock parsed: %02u:%02u", hp_data.time.hour, hp_data.time.minute);
+}
+
+// ---------------- Format ----------------
+
 std::string FrameClock::format_prev() const {
-    if (!this->prev_data_.has_value()) return "N/A";
-    return this->format(*this->prev_data_, *this->prev_data_);
+  clock_time_t prev{0,0};  // placeholder for previous value
+  return format(prev, prev);
 }
+
 std::string FrameClock::format(bool no_diff) const {
-    if (!this->data_.has_value()) return "N/A";
-    return this->format(*data_, (no_diff ? *data_ : prev_data_.value_or(*data_)));
+  clock_time_t val{0,0};
+  clock_time_t ref{0,0};
+  return format(val, ref);
 }
+
 std::string FrameClock::format(const clock_time_t& val, const clock_time_t& ref) const {
-    return val.diff(ref);
+  char buf[16];
+  snprintf(buf, sizeof(buf), "%02u:%02u", val.hour, val.minute);
+  return std::string(buf);
 }
-optional<std::shared_ptr<BaseFrame>> FrameClock::control(const HWPCall& call) {
-    // Not supported yet.
-    return nullopt;
+
+// ---------------- Control ----------------
+
+esphome::optional<std::shared_ptr<BaseFrame>> FrameClock::control(const HWPCall& call) {
+  // Example placeholder: return this frame if needed
+  return std::make_shared<FrameClock>(*this);
 }
-} // namespace hwp
-} // namespace esphome
+
+}  // namespace hwp
+}  // namespace esphome
+
