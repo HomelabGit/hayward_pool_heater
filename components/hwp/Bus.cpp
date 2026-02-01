@@ -74,9 +74,12 @@ void Bus::process_pulse(rmt_symbol_word_t* item) {
 
   for (auto& frame : rx_frames_) {
     if (!frame->is_complete()) {
-      auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
-      if (!decoder) continue;
-
+      //auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
+      //if (!decoder) continue;
+      if (frame->get_type() != FrameType::DECODER)
+      continue;
+      auto *decoder = static_cast<Decoder *>(frame.get());
+        
       if (Decoder::is_start_frame(item))
         decoder->start_new_frame();
       else if (Decoder::is_long_bit(item))
