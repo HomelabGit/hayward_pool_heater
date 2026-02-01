@@ -46,7 +46,7 @@
 namespace esphome {
 namespace hwp {
 
-Bus::Bus(size_t rx_buffer_size, size_t tx_buffer_size) 
+Bus::Bus(size_t rx_buffer_size, size_t tx_buffer_size)
   : mode(BUSMODE_RX) {
   rx_frames_.reserve(rx_buffer_size);
   tx_frames_.reserve(tx_buffer_size);
@@ -60,10 +60,11 @@ void Bus::process_pulse(rmt_symbol_word_t* item) {
   if (mode == BUSMODE_TX) return;
   if (!item) return;
 
-  // Handle RMT pulse using Decoder
+  // Handle RMT pulse using Decoder logic
   for (auto &frame : rx_frames_) {
     if (!frame->is_complete()) {
-      auto decoder = std::dynamic_pointer_cast<Decoder>(frame);
+      // Use virtual as_decoder() instead of dynamic_cast
+      Decoder* decoder = frame->as_decoder();
       if (!decoder) continue;
 
       if (Decoder::is_start_frame(item)) {
@@ -89,22 +90,25 @@ void Bus::process_send_queue() {
 
   // Simulate sending (replace with RMT TX logic)
   sendHeader();
+  current_sending_packet_.reset();
   mode = BUSMODE_RX;
+
+  // Update last sent timestamp
+  previous_sent_packet_ = esphome::millis();
 }
 
 void Bus::sendHeader() {
-  // Simulated header send
   ESP_LOGV("hwp.bus", "Sending header: LOW %ums HIGH %ums",
            frame_heading_low_duration_ms, frame_heading_high_duration_ms);
 }
 
 bool Bus::is_controller_timeout() const {
-  return millis() > (delay_between_controller_messages_ms * 1.5);
+  return esphome::millis() > (delay_between_controller_messages_ms * 1.5f);
 }
 
 bool Bus::is_time_for_next() const {
   if (!previous_sent_packet_) return true;
-  return millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
+  return esphome::millis() >= previous_sent_packet_.value() + delay_between_sending_messages_ms;
 }
 
 esphome::optional<unsigned long> Bus::next_controller_packet() const {
@@ -116,13 +120,12 @@ std::vector<std::shared_ptr<BaseFrame>> Bus::control(const HWPCall& call) {
   std::vector<std::shared_ptr<BaseFrame>> result;
   for (auto &frame : rx_frames_) {
     if (!frame->is_complete()) continue;
-    // Simulated control logic
     result.push_back(frame);
   }
   return result;
 }
 
-void Bus::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
+void Bus::traits(esphome::climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
   for (auto &frame : rx_frames_) {
     if (frame->is_complete()) {
       frame->traits(traits, hp_data);
