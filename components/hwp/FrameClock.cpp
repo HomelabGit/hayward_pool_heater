@@ -31,67 +31,61 @@
  * for any damage or loss caused by the use of this software.
  */
 #include "FrameClock.h"
-#include "Decoder.h"
 #include "esphome/core/log.h"
-#include "esphome/core/helpers.h"
 
 namespace esphome {
 namespace hwp {
 
-// ---------------- Constructor ----------------
-
-FrameClock::FrameClock() : BaseFrame(), data_(std::make_shared<Decoder>()) {}
-
-// ---------------- Factory ----------------
+// ---------------- Create / Type ----------------
 
 std::shared_ptr<BaseFrame> FrameClock::create() {
   return std::make_shared<FrameClock>();
 }
 
-// ---------------- Type ----------------
-
 const char* FrameClock::type_string() const {
   return "CLOCK";
 }
 
-// ---------------- Parse / Decode ----------------
+// ---------------- Parse / Control ----------------
 
 void FrameClock::parse(heat_pump_data_t& hp_data) {
-  if (!data_) return;
-
-  // Example: decode hours/minutes from decoder
-  hp_data.time.hour = data_->packet_.data_len > 0 ? data_->packet_.data[0] : 0;
-  hp_data.time.minute = data_->packet_.data_len > 1 ? data_->packet_.data[1] : 0;
-
-  ESP_LOGVV("hwp.frameclock", "Clock parsed: %02u:%02u", hp_data.time.hour, hp_data.time.minute);
+  hp_data.time = data_;  // assign current clock data
 }
 
-// ---------------- Format ----------------
+esphome::optional<std::shared_ptr<BaseFrame>> FrameClock::control(const int& /*call*/) {
+  return {};  // no control logic implemented
+}
+
+// ---------------- Formatting ----------------
 
 std::string FrameClock::format_prev() const {
-  clock_time_t prev{0,0};  // placeholder for previous value
-  return format(prev, prev);
+  return format(prev_, data_);
 }
 
 std::string FrameClock::format(bool no_diff) const {
-  clock_time_t val{0,0};
-  clock_time_t ref{0,0};
-  return format(val, ref);
+  if (no_diff)
+    return format(data_, data_);
+  return format(prev_, data_);
 }
 
 std::string FrameClock::format(const clock_time_t& val, const clock_time_t& ref) const {
   char buf[16];
-  snprintf(buf, sizeof(buf), "%02u:%02u", val.hour, val.minute);
+  snprintf(buf, sizeof(buf), "%02u:%02u", val.hours, val.minutes);
   return std::string(buf);
 }
 
-// ---------------- Control ----------------
+// ---------------- Matching ----------------
 
-esphome::optional<std::shared_ptr<BaseFrame>> FrameClock::control(const HWPCall& call) {
-  // Example placeholder: return this frame if needed
-  return std::make_shared<FrameClock>(*this);
+bool FrameClock::matches(BaseFrame& specialized, BaseFrame& base) {
+  auto* a = dynamic_cast<FrameClock*>(&specialized);
+  auto* b = dynamic_cast<FrameClock*>(&base);
+  if (!a || !b) return false;
+
+  return a->data_.hours == b->data_.hours &&
+         a->data_.minutes == b->data_.minutes;
 }
 
 }  // namespace hwp
 }  // namespace esphome
+
 
