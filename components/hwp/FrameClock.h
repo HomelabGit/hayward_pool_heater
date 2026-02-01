@@ -33,44 +33,50 @@
 #pragma once
 
 #include "BaseFrame.h"
-#include "Decoder.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/log.h"
 #include <memory>
 #include <string>
 
 namespace esphome {
 namespace hwp {
 
+// Forward declare heat pump data
+struct heat_pump_data_t;
+
+// Simple time structure
 struct clock_time_t {
-  uint8_t hour;
-  uint8_t minute;
+  uint8_t hours = 0;
+  uint8_t minutes = 0;
 };
 
+// FrameClock class
 class FrameClock : public BaseFrame {
  public:
-  FrameClock();
+  FrameClock() = default;
 
-  /** Factory method to create a new frame */
-  static std::shared_ptr<BaseFrame> create();
+  // Frame interface
+  std::shared_ptr<BaseFrame> create();
+  const char* type_string() const;
+  void parse(heat_pump_data_t& hp_data);
 
-  /** Return frame type string */
-  const char* type_string() const override;
-
-  /** Parse data into heat pump state */
-  void parse(heat_pump_data_t& hp_data) override;
-
-  /** Format helpers */
-  std::string format_prev() const override;
-  std::string format(bool no_diff) const override;
+  // Formatting
+  std::string format_prev() const;
+  std::string format(bool no_diff) const;
   std::string format(const clock_time_t& val, const clock_time_t& ref) const;
 
-  /** Control function for specialized frame handling */
-  esphome::optional<std::shared_ptr<BaseFrame>> control(const HWPCall& call) override;
+  // Optional control
+  esphome::optional<std::shared_ptr<BaseFrame>> control(const int& call);
+
+  // Matching
+  static bool matches(BaseFrame& specialized, BaseFrame& base);
 
  private:
-  std::shared_ptr<Decoder> data_;
+  clock_time_t data_;
+  clock_time_t prev_;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
