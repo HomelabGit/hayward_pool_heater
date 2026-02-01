@@ -43,52 +43,79 @@
 #pragma once
 
 #include <memory>
-#include <vector>
+#include <cstring>
 #include "base_frame.h"
 #include "heat_pump_data.h"
+#include "esphome/core/helpers.h"
+#include "esphome/core/log.h"
 
 namespace esphome {
 namespace hwp {
 
-// Forward declaration
-struct rmt_symbol_word_t;
+struct rmt_symbol_word_t {
+  bool level0;
+  uint32_t duration0;
+};
+
+// Constants for pulse timings
+constexpr uint32_t pulse_duration_threshold_us = 150;
+constexpr uint16_t frame_heading_high_duration_ms = 8;
+constexpr uint16_t bit_long_high_duration_ms = 2;
+constexpr uint16_t frame_end_threshold_ms = 4;
+
+// Example packet struct
+struct frame_packet_t {
+  uint8_t data[32]{};
+  uint8_t data_len{0};
+
+  uint8_t calculate_checksum() const {
+    uint8_t sum = 0;
+    for (uint8_t i = 0; i < data_len; i++)
+      sum += data[i];
+    return sum;
+  }
+};
 
 class Decoder : public BaseFrame {
  public:
-  // Constructors
-  Decoder() = default;
-  ~Decoder() override = default;
+  Decoder();
+  Decoder(const Decoder& other);
+  Decoder& operator=(const Decoder& other);
 
-  // RTTI-free access
-  Decoder* as_decoder() override { return this; }
-
-  // Frame processing
+  // Frame control
+  void reset(const char* msg = nullptr);
   void start_new_frame();
-  void append_bit(bool bit);
+  void append_bit(bool long_duration);
 
-  // Overrides BaseFrame
-  bool is_complete() const override { return finalized_; }
-  void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) override {}
+  // Finalization / Validation
+  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data) override;
+  bool is_valid() const override;
+  bool is_complete() const override;
+  void is_changed(const BaseFrame& frame) override;
 
-  // Static helpers for decoding pulses
+  // Status
+  bool is_started() const;
+  void set_started(bool value);
+  void debug(const char* msg);
+
+  // Static pulse utils
+  static int32_t get_high_duration(const rmt_symbol_word_t* item);
+  static uint32_t get_low_duration(const rmt_symbol_word_t* item);
+  static bool matches_duration(uint32_t target_us, uint32_t actual_us);
   static bool is_start_frame(const rmt_symbol_word_t* item);
   static bool is_long_bit(const rmt_symbol_word_t* item);
   static bool is_short_bit(const rmt_symbol_word_t* item);
   static bool is_frame_end(const rmt_symbol_word_t* item);
 
  private:
-  std::vector<bool> bits_;
+  frame_packet_t packet_;
+  uint8_t current_byte_value_{0};
+  uint8_t bit_current_index_{0};
+  uint8_t passes_count_{0};
   bool started_{false};
   bool finalized_{false};
-
-  // Timing constants (microseconds)
-  static constexpr uint32_t frame_heading_high_duration_ms = 4;
-  static constexpr uint32_t bit_long_high_duration_ms = 2;
-  static constexpr uint32_t frame_end_threshold_ms = 2;
-
-  // Helpers
-  static bool matches_duration(uint32_t target_us, uint32_t actual_us);
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
