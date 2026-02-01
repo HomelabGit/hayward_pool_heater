@@ -108,7 +108,7 @@ std::shared_ptr<BaseFrame> Decoder::finalize(heat_pump_data_t& /*hp_data*/) {
   finalized_ = true;
 
   auto specialized = std::make_shared<Decoder>(*this);
-  specialized->set_frame_time_ms(esphome::millis());
+  specialized->set_frame_time_ms(millis());
 
   ESP_LOGVV("hwp.decoder", "Frame finalized, type: %s", "DecoderFrame");
   return specialized;
