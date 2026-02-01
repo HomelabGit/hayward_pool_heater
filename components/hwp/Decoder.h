@@ -42,80 +42,81 @@
  */
 #pragma once
 
-#include <memory>
-#include <cstring>
-#include "base_frame.h"
-#include "heat_pump_data.h"
+#include "BaseFrame.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+#include <memory>
+#include <cstring>
 
 namespace esphome {
 namespace hwp {
 
-struct rmt_symbol_word_t {
-  bool level0;
-  uint32_t duration0;
-};
+// Forward declare heat pump data
+struct heat_pump_data_t;
 
-// Constants for pulse timings
-constexpr uint32_t pulse_duration_threshold_us = 150;
-constexpr uint16_t frame_heading_high_duration_ms = 8;
-constexpr uint16_t bit_long_high_duration_ms = 2;
-constexpr uint16_t frame_end_threshold_ms = 4;
-
-// Example packet struct
-struct frame_packet_t {
-  uint8_t data[32]{};
-  uint8_t data_len{0};
-
-  uint8_t calculate_checksum() const {
-    uint8_t sum = 0;
-    for (uint8_t i = 0; i < data_len; i++)
-      sum += data[i];
-    return sum;
-  }
-};
-
+// Decoder frame class
 class Decoder : public BaseFrame {
  public:
-  Decoder();
-  Decoder(const Decoder& other);
-  Decoder& operator=(const Decoder& other);
+  Decoder() = default;
+  Decoder(const Decoder& other) = default;
+  Decoder& operator=(const Decoder& other) = default;
 
   // Frame control
   void reset(const char* msg = nullptr);
   void start_new_frame();
   void append_bit(bool long_duration);
 
-  // Finalization / Validation
-  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data) override;
+  // Validation / Finalization
+  std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& hp_data);
   bool is_valid() const override;
   bool is_complete() const override;
-  void is_changed(const BaseFrame& frame) override;
+  void is_changed(const BaseFrame& frame);
 
   // Status
   bool is_started() const;
   void set_started(bool value);
   void debug(const char* msg);
 
-  // Static pulse utils
+  // RMT / Pulse utilities
   static int32_t get_high_duration(const rmt_symbol_word_t* item);
   static uint32_t get_low_duration(const rmt_symbol_word_t* item);
   static bool matches_duration(uint32_t target_us, uint32_t actual_us);
+
+  // Static pulse checks
   static bool is_start_frame(const rmt_symbol_word_t* item);
   static bool is_long_bit(const rmt_symbol_word_t* item);
   static bool is_short_bit(const rmt_symbol_word_t* item);
   static bool is_frame_end(const rmt_symbol_word_t* item);
 
  private:
-  frame_packet_t packet_;
-  uint8_t current_byte_value_{0};
-  uint8_t bit_current_index_{0};
-  uint8_t passes_count_{0};
-  bool started_{false};
-  bool finalized_{false};
+  // Frame state
+  bool started_ = false;
+  bool finalized_ = false;
+
+  // Bit parsing
+  uint8_t current_byte_value_ = 0;
+  uint8_t bit_current_index_ = 0;
+  uint8_t passes_count_ = 0;
+
+  // Packet storage
+  struct {
+    uint8_t data[32] = {0};
+    size_t data_len = 0;
+    uint8_t calculate_checksum() const;
+  } packet_;
+
+  // Source info
+  enum Source { SOURCE_UNKNOWN, SOURCE_CONTROLLER, SOURCE_HEATER };
+  Source source_ = SOURCE_UNKNOWN;
+
+  // Pulse timings
+  static constexpr uint32_t pulse_duration_threshold_us = 150;
+  static constexpr uint32_t frame_heading_high_duration_ms = 80;
+  static constexpr uint32_t bit_long_high_duration_ms = 50;
+  static constexpr uint32_t frame_end_threshold_ms = 100;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
