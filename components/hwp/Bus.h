@@ -42,6 +42,7 @@
  * Use at your own risk. No warranty is provided.
  */
 #pragma once
+
 #include <vector>
 #include <memory>
 #include "esphome/core/log.h"
@@ -54,45 +55,63 @@
 namespace esphome {
 namespace hwp {
 
+// Simple call struct for sending commands
 struct HWPCall {
   int command;
 };
 
+// Bus operating modes
 enum BusMode { BUSMODE_RX, BUSMODE_TX };
 
 class Bus {
  public:
+  // Constructor with optional RX/TX buffer sizes
   Bus(size_t rx_buffer_size = 16, size_t tx_buffer_size = 16);
 
+  // Start receiving frames
   void start_receive();
+
+  // Process a single RMT pulse
   void process_pulse(rmt_symbol_word_t* item);
+
+  // Handle queued messages to send
   void process_send_queue();
+
+  // Send a header packet
   void sendHeader();
 
+  // Timing / controller checks
   bool is_controller_timeout() const;
   bool is_time_for_next() const;
   esphome::optional<unsigned long> next_controller_packet() const;
 
+  // Send a command and get responses
   std::vector<std::shared_ptr<BaseFrame>> control(const HWPCall& call);
 
+  // Fill climate traits from heat pump data
   void traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data);
 
  private:
   BusMode mode_;
 
+  // Timing constants
   inline static constexpr uint32_t delay_between_controller_messages_ms = 1000;
   inline static constexpr uint32_t delay_between_sending_messages_ms = 150;
   inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
   inline static constexpr uint32_t frame_heading_low_duration_ms = 500;
 
+  // RX/TX frame buffers
   std::vector<std::shared_ptr<BaseFrame>> rx_frames_;
   std::vector<std::shared_ptr<BaseFrame>> tx_frames_;
+
+  // Current packet being sent
   std::shared_ptr<BaseFrame> current_sending_packet_;
   esphome::optional<unsigned long> previous_sent_packet_;
 };
 
 }  // namespace hwp
 }  // namespace esphome
+
 
 
 
