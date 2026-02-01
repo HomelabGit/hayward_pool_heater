@@ -41,71 +41,43 @@
  * Compliant with ESPHome 26 / ESP-IDF v6.0 (2026)
  */
 #pragma once
-#include <cstdint>
-#include <memory>
-#include <cstring>
 #include "base_frame.h"
+#include "esphome/core/log.h"
+#include "esphome/core/helpers.h"
 
 namespace esphome {
 namespace hwp {
 
 class Decoder : public BaseFrame {
-public:
-    Decoder() = default;
-    ~Decoder() override = default;
+ public:
+  Decoder() = default;
 
-    void start_new_frame() override {
-        data_len_ = 0;
-        finalized_ = false;
-        current_byte_ = 0;
-        bit_index_ = 0;
-    }
+  // RTTI-free cast
+  Decoder* as_decoder() override { return this; }
 
-    void append_bit(bool long_bit) override {
-        if (bit_index_ == 8) {
-            if (data_len_ < sizeof(data_))
-                data_[data_len_++] = current_byte_;
-            current_byte_ = 0;
-            bit_index_ = 0;
-        }
-        current_byte_ <<= 1;
-        if (long_bit)
-            current_byte_ |= 1;
-        ++bit_index_;
-    }
+  void start_new_frame() {
+    started_ = true;
+    finalized_ = false;
+    bits_.clear();
+  }
 
-    std::shared_ptr<BaseFrame> finalize(heat_pump_data_t& /*hp_data*/) override {
-        if (bit_index_ > 0 && data_len_ < sizeof(data_))
-            data_[data_len_++] = current_byte_;
-        finalized_ = true;
-        return std::make_shared<Decoder>(*this);
-    }
+  void append_bit(bool bit) {
+    bits_.push_back(bit);
+  }
 
-    bool is_complete() const override { return finalized_; }
+  bool is_complete() const override { return finalized_; }
 
-    // Timing constants
-    inline static constexpr uint32_t bit_long_high_duration_ms = 800;
-    inline static constexpr uint32_t bit_low_duration_ms = 500;
-    inline static constexpr uint32_t frame_heading_high_duration_ms = 1500;
-    inline static constexpr uint32_t frame_heading_low_duration_ms = 700;
+  void finalize_frame() { finalized_ = true; }
 
-    static bool is_start_frame(const rmt_symbol_word_t* item) {
-        return item->level0 && item->duration0 >= frame_heading_high_duration_ms * 1000;
-    }
-    static bool is_long_bit(const rmt_symbol_word_t* item) {
-        return item->level0 && item->duration0 >= bit_long_high_duration_ms * 1000;
-    }
-    static bool is_short_bit(const rmt_symbol_word_t* item) {
-        return item->level0 && item->duration0 >= bit_low_duration_ms * 1000 &&
-               item->duration0 < bit_long_high_duration_ms * 1000;
-    }
-    static bool is_frame_end(const rmt_symbol_word_t* item) {
-        return !item->level0;
-    }
+  static bool is_start_frame(const rmt_symbol_word_t* item);
+  static bool is_long_bit(const rmt_symbol_word_t* item);
+  static bool is_short_bit(const rmt_symbol_word_t* item);
+  static bool is_frame_end(const rmt_symbol_word_t* item);
 
-private:
-    uint8_t current_byte_{0};
-    uint8_t bit_index_{0};
+ private:
+  bool started_ = false;
+  bool finalized_ = false;
+  std::vector<bool> bits_;
 };
 
 }  // namespace hwp
