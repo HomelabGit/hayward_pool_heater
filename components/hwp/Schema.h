@@ -452,7 +452,7 @@ typedef struct bits_details {
      * @return A string that describes the differences between the bit
      * fields of the current object and the given reference object.
      */
-    static std::string bit(uint8_t raw, uint8_t ref) {
+    static std::string bit_flag(uint8_t raw, uint8_t ref) {
         struct bits_details bits;
         struct bits_details ref_bits;
         bits.raw = raw;
