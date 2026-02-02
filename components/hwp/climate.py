@@ -45,6 +45,7 @@ CODEOWNERS = ["@sle118"]
 
 AUTO_LOAD = [
     "climate",
+    "switch", 
     "select",
     "sensor",
     "binary_sensor",
