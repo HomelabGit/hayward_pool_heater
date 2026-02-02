@@ -179,7 +179,8 @@ def create_throttle_avg_filter(sensor_name):
     }
 
 
-BASE_SCHEMA = climate.CLIMATE_SCHEMA.extend(
+#BASE_SCHEMA = climate.CLIMATE_SCHEMA.extend(
+ BASE_SCHEMA = climate.climate_schema(HWPClimate).extend(   
     {
         cv.GenerateID(CONF_ID): cv.declare_id(PoolHeater),
         cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
@@ -632,13 +633,17 @@ CONFIG_SCHEMA = BASE_SCHEMA.extend(
 
 
 @coroutine
+
 async def to_code(config):
 
     pin_component = await cg.gpio_pin_expression(config[CONF_GPIO_NETPIN])
     # max_buffer_count = config[CONF_MAX_BUFFER_COUNT]
     heater_component = cg.new_Pvariable(config[CONF_ID], pin_component)
 
-    await cg.register_component(heater_component, config)
+    var = await climate.new_climate(config)
+    await cg.register_component(var, config)
+
+    #await cg.register_component(heater_component, config)
     await climate.register_climate(heater_component, config)
 
     # Sensors
