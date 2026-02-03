@@ -107,11 +107,36 @@ void PoolHeater::update() {
         this->action = climate::CLIMATE_ACTION_OFF;
     }
     this->mode = this->hp_data_.mode.value_or(this->mode);
-    
+
+
     if (this->hp_data_.fan_mode.has_value()) {
-          this->set_fan_mode(this->hp_data_.fan_mode->to_climate_fan_mode());
+  // Standard fan modes (LOW/HIGH etc.)
+      if (auto fm = this->hp_data_.fan_mode->to_climate_fan_mode(); fm.has_value()) {
+        this->fan_mode = fm.value();
+      }
+
+  // Custom fan modes (AMBIENT/SCHEDULED etc.)
+  if (auto cfm = this->hp_data_.fan_mode->to_custom_fan_mode(); cfm.has_value()) {
+    // Climate stores a const char* for custom fan mode.
+    // Store the string so the pointer stays valid.
+    // Add this member to PoolHeater class (see below).
+    this->custom_fan_mode_storage_ = cfm.value();
+    this->custom_fan_mode_ = this->custom_fan_mode_storage_.c_str();
+  } else {
+    // If not using a custom fan mode, clear it
+    this->custom_fan_mode_storage_.clear();
+    this->custom_fan_mode_ = nullptr;
+  }
+}
+
+
+    
+   // if (this->hp_data_.fan_mode.has_value()) {
+        //  this->set_fan_mode(this->hp_data_.fan_mode->to_climate_fan_mode());
+
+        
         //this->set_custom_fan_mode(this->hp_data_.fan_mode->to_custom_fan_mode());
-    }
+    //}
     
     //if(this->hp_data_.fan_mode.has_value() ) {
         //this->custom_fan_mode = this->hp_data_.fan_mode->to_custom_fan_mode();
