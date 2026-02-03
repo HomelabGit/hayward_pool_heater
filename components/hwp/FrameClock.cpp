@@ -32,35 +32,47 @@
  */
 
 #include "FrameClock.h"
-#include "CS.h"
-#include "Schema.h"
+
 namespace esphome {
 namespace hwp {
-CLASS_ID_DECLARATION(esphome::hwp::FrameClock);
-std::shared_ptr<BaseFrame> FrameClock::create() {
-    return std::make_shared<FrameClock>(); // Create a FrameTemperature if type matches
-}
-// FRAME_ID_t FrameClock::get_type() const { return FRAME_CLOCK; }
-const char* FrameClock::type_string() const { return "CLOCK     "; }
-bool FrameClock::matches(BaseFrame& secialized, BaseFrame& base) {
-    return base.packet.get_type() == FRAME_ID_CLOCK;
+
+CLASS_ID_DECLARATION(esphome::hwp::FrameClock)
+
+std::shared_ptr<BaseFrame> FrameClock::create() { return std::make_shared<FrameClock>(); }
+
+const char *FrameClock::type_string() const { return "CLOCK"; }
+
+bool FrameClock::matches(BaseFrame & /*specialized*/, BaseFrame &base) {
+  return base.packet.get_type() == FRAME_ID_CLOCK;
 }
 
-void FrameClock::parse(heat_pump_data_t& hp_data) { hp_data.time = data_->decode(); }
+void FrameClock::parse(heat_pump_data_t &hp_data) {
+  if (this->data_.has_value()) {
+    hp_data.time = this->data_.value().decode();
+  }
+}
+
 std::string FrameClock::format_prev() const {
-    if (!this->prev_data_.has_value()) return "N/A";
-    return this->format(*this->prev_data_, *this->prev_data_);
+  if (!this->prev_data_.has_value())
+    return "N/A";
+  return this->format(this->prev_data_.value(), this->prev_data_.value());
 }
+
 std::string FrameClock::format(bool no_diff) const {
-    if (!this->data_.has_value()) return "N/A";
-    return this->format(*data_, (no_diff ? *data_ : prev_data_.value_or(*data_)));
+  if (!this->data_.has_value())
+    return "N/A";
+  const auto &cur = this->data_.value();
+  const auto ref = (no_diff ? cur : this->prev_data_.value_or(cur));
+  return this->format(cur, ref);
 }
-std::string FrameClock::format(const clock_time_t& val, const clock_time_t& ref) const {
-    return val.diff(ref);
+
+std::string FrameClock::format(const clock_time_t &val, const clock_time_t &ref) const {
+  return val.diff(ref);
 }
-optional<std::shared_ptr<BaseFrame>> FrameClock::control(const HWPCall& call) {
-    // Not supported yet.
-    return nullopt;
+
+esphome::optional<std::shared_ptr<BaseFrame>> FrameClock::control(const HWPCall & /*call*/) {
+  return esphome::nullopt;
 }
-} // namespace hwp
-} // namespace esphome
+
+}  // namespace hwp
+}  // namespace esphome
