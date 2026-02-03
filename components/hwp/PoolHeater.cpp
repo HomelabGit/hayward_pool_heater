@@ -290,18 +290,39 @@ bool PoolHeater::is_update_active() { return this->update_active_; }
  * @brief Get the climate traits.
  * @return The climate traits.
  */
-
 climate::ClimateTraits PoolHeater::traits() {
   climate::ClimateTraits traits;
   traits.set_supports_current_temperature(true);
+
+  // Only the standard modes you actually implement
   traits.set_supported_fan_modes({
-    climate::CLIMATE_FAN_AUTO,
     climate::CLIMATE_FAN_LOW,
-    climate::CLIMATE_FAN_MEDIUM,
     climate::CLIMATE_FAN_HIGH,
   });
+
+  // Advertise your custom fan modes
+  traits.set_supported_custom_fan_modes({
+    FanMode::ambient_desc,
+    FanMode::scheduled_desc,
+    FanMode::ambient_scheduled_desc,
+  });
+
   return traits;
 }
+
+
+
+//climate::ClimateTraits PoolHeater::traits() {
+//  climate::ClimateTraits traits;
+//  traits.set_supports_current_temperature(true);
+//  traits.set_supported_fan_modes({
+//    climate::CLIMATE_FAN_AUTO,
+//    climate::CLIMATE_FAN_LOW,
+//    climate::CLIMATE_FAN_MEDIUM,
+//    climate::CLIMATE_FAN_HIGH,
+//  });
+//  return traits;
+//}
 
 
 
