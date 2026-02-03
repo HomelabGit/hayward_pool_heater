@@ -170,8 +170,8 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
     return optional<std::shared_ptr<FrameConf1>>{
         std::make_shared<FrameConf1>(command_frame)};
 }
+
 void FrameConf1::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
-    // Baseline "any" modes your device can do when unrestricted
     const auto any_modes = {
         climate::CLIMATE_MODE_OFF,
         climate::CLIMATE_MODE_HEAT,
@@ -179,40 +179,36 @@ void FrameConf1::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_dat
         climate::CLIMATE_MODE_AUTO,
     };
 
-    // Default if we don't have config data yet
+    // If we don't have config data yet, allow everything (safe default).
     if (!this->data_.has_value()) {
         traits.set_supported_modes(any_modes);
         return;
     }
 
-    // We do have config data: apply restrictions
     const auto mode_restrictions = this->data_->mode.get_mode_restriction();
 
-    switch (mode_restrictions) {
-        case HeatPumpRestrict::Any:
-            traits.set_supported_modes(any_modes);
-            break;
+    // HeatPumpRestrict is not an enum -> use comparisons, not switch/case.
+    if (mode_restrictions == HeatPumpRestrict::Any) {
+        traits.set_supported_modes(any_modes);
 
-        case HeatPumpRestrict::Heating:
-            traits.set_supported_modes({
-                climate::CLIMATE_MODE_OFF,
-                climate::CLIMATE_MODE_HEAT,
-            });
-            break;
+    } else if (mode_restrictions == HeatPumpRestrict::Heating) {
+        traits.set_supported_modes({
+            climate::CLIMATE_MODE_OFF,
+            climate::CLIMATE_MODE_HEAT,
+        });
 
-        case HeatPumpRestrict::Cooling:
-            traits.set_supported_modes({
-                climate::CLIMATE_MODE_OFF,
-                climate::CLIMATE_MODE_COOL,
-            });
-            break;
+    } else if (mode_restrictions == HeatPumpRestrict::Cooling) {
+        traits.set_supported_modes({
+            climate::CLIMATE_MODE_OFF,
+            climate::CLIMATE_MODE_COOL,
+        });
 
-        default:
-            // Unknown restriction: fall back to safest reasonable set
-            traits.set_supported_modes(any_modes);
-            break;
+    } else {
+        // Unknown restriction: fall back to "any"
+        traits.set_supported_modes(any_modes);
     }
 }
+
 
 bool FrameConf1::matches(BaseFrame& specialized, BaseFrame& base) {
     return base.packet.get_type() == FRAME_ID_CONF_1;
