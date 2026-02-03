@@ -234,7 +234,7 @@ class FanMode {
        //     if (from_custom.has_value()) {
        //         return from_custom;
        //     }
-        }
+       // }
         if (call.get_fan_mode().has_value()) {
             auto from_climate = from_climate_fan_mode(call.get_fan_mode().value());
             if (from_climate.has_value()) {
