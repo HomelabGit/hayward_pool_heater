@@ -36,7 +36,7 @@
 #include "Schema.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/climate/climate_mode.h"
-#include <set> 
+//#include <set> 
 
 
 namespace esphome {
@@ -171,29 +171,49 @@ optional<std::shared_ptr<BaseFrame>> FrameConf1::control(const HWPCall& call) {
         std::make_shared<FrameConf1>(command_frame)};
 }
 void FrameConf1::traits(climate::ClimateTraits& traits, heat_pump_data_t& hp_data) {
-    const std::set<climate::ClimateMode> any_mode = {
+    // Baseline "any" modes your device can do when unrestricted
+    const auto any_modes = {
         climate::CLIMATE_MODE_OFF,
         climate::CLIMATE_MODE_HEAT,
         climate::CLIMATE_MODE_COOL,
         climate::CLIMATE_MODE_AUTO,
     };
-    if (this->data_.has_value()) {
-        traits.add_supported_mode(climate::CLIMATE_MODE_OFF);
-        auto mode_restrictions = this->data_->mode.get_mode_restriction();
-        if (mode_restrictions == HeatPumpRestrict::Any) {
-            traits.set_supported_modes(any_mode);
-        } else if (mode_restrictions == HeatPumpRestrict::Heating) {
-            traits.add_supported_mode(climate::CLIMATE_MODE_HEAT);
-        } else if (mode_restrictions == HeatPumpRestrict::Cooling) {
-            traits.add_supported_mode(climate::CLIMATE_MODE_COOL);
-        } else {
-            // ESP_LOGW(TAG_TEMP, "Restriction mode %s needs traits update",
-            // temp_frame->get_mode_restriction_desc());
-        }
-    } else {
-        traits.set_supported_modes(any_mode);
+
+    // Default if we don't have config data yet
+    if (!this->data_.has_value()) {
+        traits.set_supported_modes(any_modes);
+        return;
+    }
+
+    // We do have config data: apply restrictions
+    const auto mode_restrictions = this->data_->mode.get_mode_restriction();
+
+    switch (mode_restrictions) {
+        case HeatPumpRestrict::Any:
+            traits.set_supported_modes(any_modes);
+            break;
+
+        case HeatPumpRestrict::Heating:
+            traits.set_supported_modes({
+                climate::CLIMATE_MODE_OFF,
+                climate::CLIMATE_MODE_HEAT,
+            });
+            break;
+
+        case HeatPumpRestrict::Cooling:
+            traits.set_supported_modes({
+                climate::CLIMATE_MODE_OFF,
+                climate::CLIMATE_MODE_COOL,
+            });
+            break;
+
+        default:
+            // Unknown restriction: fall back to safest reasonable set
+            traits.set_supported_modes(any_modes);
+            break;
     }
 }
+
 bool FrameConf1::matches(BaseFrame& specialized, BaseFrame& base) {
     return base.packet.get_type() == FRAME_ID_CONF_1;
 }
