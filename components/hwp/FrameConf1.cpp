@@ -36,6 +36,9 @@
 #include "Schema.h"
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/climate/climate_mode.h"
+#include <set> 
+
+
 namespace esphome {
 namespace hwp {
 constexpr char TAG[] = "hwp";
