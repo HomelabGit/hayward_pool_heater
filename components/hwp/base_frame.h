@@ -63,7 +63,7 @@ namespace hwp {
     template <size_t N>                                                                            \
     DerivedFrameClass(const unsigned char(&cmdTrame)[N]) : BaseFrame(cmdTrame) {                   \
         //data_ = this->packet;   \
-        data_ = esphome::optional<DATA_T>(this->packet.template as_type<DATA_T>());
+        data_ = esphome::optional<DATA_T>(this->packet.template as_type<DATA_T>()); \
         //data_.emplace(this->packet.template as_type<DATA_T>());
 
     }                                                                                              \
