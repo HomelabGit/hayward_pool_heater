@@ -481,12 +481,21 @@ typedef struct bits_details {
         return bits.diff(ref_bits, 0, 1);
     }
 
+static std::string bit_flag(const bits_details &bits, uint8_t bit_index, uint8_t ref) {
+  uint8_t value = (bits.raw >> bit_index) & 0x01;
+  uint8_t ref_value = (ref >> bit_index) & 0x01;
+  return bit_flag(value, ref_value);
+}
+
+
+
+
   // 3-arg: extract bit_index from a bits_details_t (byte) and compare to ref bit (0/1)
-    static std::string bit_flag(const bits_details_t &bits, uint8_t bit_index, uint8_t ref) {
-        uint8_t value = (bits.raw >> bit_index) & 0x01;
-        uint8_t ref_value = (ref >> bit_index) & 0x01;   // <- IMPORTANT (see below)
-        return bit_flag(value, ref_value);
-    }
+  //  static std::string bit_flag(const bits_details_t &bits, uint8_t bit_index, uint8_t ref) {
+  //      uint8_t value = (bits.raw >> bit_index) & 0x01;
+  //      uint8_t ref_value = (ref >> bit_index) & 0x01;   // <- IMPORTANT (see below)
+  //      return bit_flag(value, ref_value);
+  //  }
 
     /**
      * @brief Formats the bitset into a string representation with a specified separator.
