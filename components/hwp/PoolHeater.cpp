@@ -45,6 +45,8 @@
 namespace esphome {
 namespace hwp {
 
+std::string custom_fan_mode_storage_;
+
 const char* POOL_HEATER_TAG = "hwp";
 PoolHeater::PoolHeater(InternalGPIOPin* gpio_pin) { this->driver_.set_gpio_pin(gpio_pin); }
 
