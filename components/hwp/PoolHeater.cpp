@@ -290,17 +290,32 @@ bool PoolHeater::is_update_active() { return this->update_active_; }
  * @brief Get the climate traits.
  * @return The climate traits.
  */
+
 climate::ClimateTraits PoolHeater::traits() {
-    auto traits = climate::ClimateTraits();
-
-    traits.set_supports_current_temperature(true);
-    traits.set_supports_action(true);
-    this->driver_.traits(traits, this->hp_data_);
-    traits.set_supports_two_point_target_temperature(false);
-    traits.set_supports_current_humidity(false);
-
-    return traits;
+  climate::ClimateTraits traits;
+  traits.set_supports_current_temperature(true);
+  traits.set_supported_fan_modes({
+    climate::CLIMATE_FAN_AUTO,
+    climate::CLIMATE_FAN_LOW,
+    climate::CLIMATE_FAN_MEDIUM,
+    climate::CLIMATE_FAN_HIGH,
+  });
+  return traits;
 }
+
+
+
+//climate::ClimateTraits PoolHeater::traits() {
+//    auto traits = climate::ClimateTraits();
+
+//    traits.set_supports_current_temperature(true);
+//    traits.set_supports_action(true);
+//    this->driver_.traits(traits, this->hp_data_);
+//    traits.set_supports_two_point_target_temperature(false);
+//    traits.set_supports_current_humidity(false);
+
+//    return traits;
+//}
 
 
 } // namespace hwp
