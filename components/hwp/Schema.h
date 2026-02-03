@@ -487,6 +487,20 @@ static std::string bit_flag(const bits_details &bits, uint8_t bit_index, uint8_t
   return bit_flag(value, ref_value);
 }
 
+// 2-arg: compare a single bit (0/1) to a reference bit (0/1) and return a diff string
+static std::string bit(uint8_t cur, uint8_t ref) {
+  bits_details b{};
+  bits_details r{};
+  b.raw = (cur & 0x01);
+  r.raw = (ref & 0x01);
+  return b.diff(r, 0, 1);
+}
+
+// Overload for bool fields (common in your frame structs)
+static std::string bit(bool cur, bool ref) {
+  return bit(static_cast<uint8_t>(cur), static_cast<uint8_t>(ref));
+}
+
 
 
 
