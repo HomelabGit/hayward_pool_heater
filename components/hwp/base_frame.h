@@ -62,7 +62,10 @@ namespace hwp {
     }                                                                                              \
     template <size_t N>                                                                            \
     DerivedFrameClass(const unsigned char(&cmdTrame)[N]) : BaseFrame(cmdTrame) {                   \
-        data_ = this->packet;                                                                      \
+        //data_ = this->packet;   \
+        data_ = esphome::optional<DATA_T>(this->packet.template as_type<DATA_T>());
+        //data_.emplace(this->packet.template as_type<DATA_T>());
+
     }                                                                                              \
     static std::shared_ptr<BaseFrame> create();                                                    \
     static bool matches(BaseFrame& specialized, BaseFrame& base);                                  \
