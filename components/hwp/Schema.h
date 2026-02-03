@@ -164,18 +164,33 @@ class FanMode {
      *
      * @return optional<std::string>
      */
-    optional<std::string> to_custom_fan_mode() const {
-        switch (value_) {
+    optional<const char*> to_custom_fan_mode() const {
+      switch (value_) {
         case AMBIENT:
-            return make_optional<std::string>(ambient_desc);
+          return ambient_desc;
         case SCHEDULED:
-            return make_optional<std::string>(scheduled_desc);
+          return scheduled_desc;
         case AMBIENT_SCHEDULED:
-            return make_optional<std::string>(ambient_scheduled_desc);
+          return ambient_scheduled_desc;
         default:
-            return nullopt;
-        }
-    }
+      return nullopt;
+      }
+  }
+
+
+
+  //optional<std::string> to_custom_fan_mode() const {
+    //    switch (value_) {
+    //    case AMBIENT:
+    //        return make_optional<std::string>(ambient_desc);
+    //    case SCHEDULED:
+    //        return make_optional<std::string>(scheduled_desc);
+    //    case AMBIENT_SCHEDULED:
+    //        return make_optional<std::string>(ambient_scheduled_desc);
+    //    default:
+    //        return nullopt;
+    //    }
+    //}
     /**
      * @brief Converts a climate custom fan mode string to
      * the corresponding fan mode if applicable
