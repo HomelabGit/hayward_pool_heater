@@ -56,10 +56,9 @@ void PoolHeater::setup() {
     this->driver_.set_data_model(hp_data_);
     this->current_temperature = NAN;
 
-    // Using App.get_build_time_string() means these will get reset each time the firmware is
-    // updated, but this is an easy way to prevent wierd conflicts if e.g. select options change.
+    // Seed preferences with build timestamp so state refreshes after firmware updates.
     preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
-        get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
+        get_object_id_hash() ^ fnv1_hash(__DATE__ " " __TIME__));
     restore_preferences_();
     set_actual_status("Ready");
     this->status_set_warning("Waiting for heater state");

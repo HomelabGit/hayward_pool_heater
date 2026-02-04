@@ -358,7 +358,7 @@ class Bus {
         }
 
         auto* log = logger::global_logger;
-        if (log == nullptr || log->level_for(TAG_PULSES) < ESPHOME_LOG_LEVEL_VERBOSE) {
+        if (log == nullptr) {
             return;
         }
 
@@ -374,7 +374,7 @@ class Bus {
         }
 
         auto* log = logger::global_logger;
-        if (log == nullptr || log->level_for(TAG_PULSES) < ESPHOME_LOG_LEVEL_VERBOSE) {
+        if (log == nullptr) {
             return;
         }
 
