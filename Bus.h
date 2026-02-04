@@ -50,6 +50,7 @@
 #include <sstream>
 
 #include "Decoder.h"
+#include "rmt_compat.h"
 
 #include "SpinLockQueue.h"
 #include "esphome/core/gpio.h"
@@ -225,14 +226,12 @@ class Bus {
     SpinLockQueue<std::shared_ptr<BaseFrame>> received_frames; ///< Queue for received frames.
     SpinLockQueue<std::shared_ptr<BaseFrame>>
         tx_packets_queue; ///< Queue for frames to be transmitted.
-    rmt_config_t rmt_tx_config_;
-    rmt_config_t rmt_rx_config_;
     RingbufHandle_t rb_;
 #ifdef PULSE_DEBUG
     std::vector<std::string> pulse_strings_; // Vector to store formatted pulse strings
 #endif
     uint64_t last_change_us_;
-    volatile rmt_item32_t current_pulse_;
+    volatile hwp_rmt_item_t current_pulse_;
 
     inline uint64_t elapsed(uint64_t now) {
         if (now >= this->last_change_us_) {
@@ -328,10 +327,10 @@ class Bus {
         delayMicroseconds(ms * 1000);
     }
 
-    void process_pulse(rmt_item32_t* item);
+    void process_pulse(hwp_rmt_item_t* item);
     void finalize_frame(bool timeout);
 
-    std::string format_pulse_item(const rmt_item32_t* item) {
+    std::string format_pulse_item(const hwp_rmt_item_t* item) {
         if (item == nullptr) {
             return "";
         }
@@ -351,7 +350,7 @@ class Bus {
         // Store the result in the vector
         return oss.str();
     }
-    void log_pulse_item(const rmt_item32_t* item) {
+    void log_pulse_item(const hwp_rmt_item_t* item) {
 #ifdef PULSE_DEBUG
         if (item == nullptr) {
             return;
