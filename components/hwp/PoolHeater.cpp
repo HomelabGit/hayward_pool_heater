@@ -45,8 +45,6 @@
 namespace esphome {
 namespace hwp {
 
-std::string custom_fan_mode_storage_;
-
 const char* POOL_HEATER_TAG = "hwp";
 PoolHeater::PoolHeater(InternalGPIOPin* gpio_pin) { this->driver_.set_gpio_pin(gpio_pin); }
 
@@ -58,10 +56,10 @@ void PoolHeater::setup() {
     this->driver_.set_data_model(hp_data_);
     this->current_temperature = NAN;
 
-    // Using App.get_compilation_time() means these will get reset each time the firmware is
+    // Using App.get_build_time_string() means these will get reset each time the firmware is
     // updated, but this is an easy way to prevent wierd conflicts if e.g. select options change.
     preferences_ = global_preferences->make_preference<PoolHeaterPreferences>(
-        get_object_id_hash() ^ fnv1_hash(App.get_compilation_time()));
+        get_object_id_hash() ^ fnv1_hash(App.get_build_time_string()));
     restore_preferences_();
     set_actual_status("Ready");
     this->status_set_warning("Waiting for heater state");
@@ -112,24 +110,11 @@ void PoolHeater::update() {
 
 
     if (this->hp_data_.fan_mode.has_value()) {
-  // Standard fan modes (LOW/HIGH etc.)
-      if (auto fm = this->hp_data_.fan_mode->to_climate_fan_mode(); fm.has_value()) {
-        this->fan_mode = fm.value();
-      }
-
-  // Custom fan modes (AMBIENT/SCHEDULED etc.)
-  if (auto cfm = this->hp_data_.fan_mode->to_custom_fan_mode(); cfm.has_value()) {
-    // Climate stores a const char* for custom fan mode.
-    // Store the string so the pointer stays valid.
-    // Add this member to PoolHeater class (see below).
-    this->custom_fan_mode_storage_ = cfm.value();
-    this->custom_fan_mode_ = this->custom_fan_mode_storage_.c_str();
-  } else {
-    // If not using a custom fan mode, clear it
-    this->custom_fan_mode_storage_.clear();
-    this->custom_fan_mode_ = nullptr;
-  }
-}
+        // Only update standard fan modes here. ESPHome 2026 made custom_fan_mode_ private.
+        if (auto fm = this->hp_data_.fan_mode->to_climate_fan_mode(); fm.has_value()) {
+            this->fan_mode = fm.value();
+        }
+    }
 
 
     

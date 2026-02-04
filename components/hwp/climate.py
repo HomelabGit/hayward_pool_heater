@@ -518,7 +518,7 @@ SENSORS_SCHEMA = cv.All(
             sensor_designator,
             default={
                 "name": f"{sensor_name}",
-                "disabled_by_default": "false",
+                "disabled_by_default": False,
                 **(filter_creation(sensor_designator) if filter_creation else {}),
             },
         ): sensor_schema
