@@ -50,9 +50,7 @@
 #include <string>
 #include <vector>
 
-// NOTE: ESP-IDF prints a deprecation warning if you include legacy driver/rmt.h.
-// Keep it if you still use the legacy API. Otherwise switch to driver/rmt_rx.h / rmt_tx.h.
-#include <driver/rmt.h>
+// RMT types are now included only where pulse decoding/transmit code needs them.
 
 namespace esphome {
 namespace hwp {

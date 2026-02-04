@@ -33,6 +33,7 @@
 #include <cstring>
 #include "esphome/core/log.h"
 #include "base_frame.h"
+#include "rmt_compat.h"
 
 
 namespace esphome {
@@ -49,13 +50,13 @@ namespace esphome {
       bool is_valid() const;
       void append_bit(bool long_duration);
       void start_new_frame();
-      static int32_t get_high_duration(const rmt_item32_t* item);
-      static uint32_t get_low_duration(const rmt_item32_t* item);
+      static int32_t get_high_duration(const hwp_rmt_item_t* item);
+      static uint32_t get_low_duration(const hwp_rmt_item_t* item);
       static bool matches_duration(uint32_t target_us, uint32_t actual_us);
-      static bool is_start_frame(const rmt_item32_t* item);
-      static bool is_long_bit(const rmt_item32_t* item);
-      static bool is_short_bit(const rmt_item32_t* item);
-      static bool is_frame_end(const rmt_item32_t* item);
+      static bool is_start_frame(const hwp_rmt_item_t* item);
+      static bool is_long_bit(const hwp_rmt_item_t* item);
+      static bool is_short_bit(const hwp_rmt_item_t* item);
+      static bool is_frame_end(const hwp_rmt_item_t* item);
       bool is_started() const;
       void set_started(bool value);
       void debug(const char* msg = "");
