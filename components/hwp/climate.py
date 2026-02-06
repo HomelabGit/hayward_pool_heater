@@ -66,7 +66,6 @@ CONF_THROTTLE_AVERAGE = "throttle_average"
 CONF_ACTIVE_MODE_SWITCH = "active_mode_switch"
 CONF_UPDATE_SENSORS_SWITCH = "update_sensors_switch"
 CONF_GENERATE_CODE_BUTTON = "generate_code"
-CONF_FORCE_CELSIUS = "force_celsius"
 
 CONF_GPIO_NETPIN = "pin_txrx"
 
@@ -176,7 +175,6 @@ BASE_SCHEMA = climate.climate_schema(PoolHeater).extend(
             entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
             icon="mdi:code-tags",
         ),
-        cv.Optional(CONF_FORCE_CELSIUS, default=False): cv.boolean,
         cv.Optional(CONF_UPDATE_INTERVAL, default="30s"): cv.All(
             cv.positive_time_period_milliseconds,
             cv.Range(
@@ -581,7 +579,6 @@ async def to_code(config):
     heater_component = cg.new_Pvariable(config[CONF_ID], pin_component)
     await cg.register_component(heater_component, config)
     await climate.register_climate(heater_component, config)
-    cg.add(heater_component.set_force_celsius(config[CONF_FORCE_CELSIUS]))
 
     # Sensors
     for sensor_designator, (_name, _schema, registration_function, _filter_fn) in SENSORS.items():

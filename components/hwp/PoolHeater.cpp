@@ -245,7 +245,6 @@ void PoolHeater::dump_config() {
     }
     ESP_LOGCONFIG(POOL_HEATER_TAG, "      - passive_mode: %s", ONOFF(this->passive_mode_));
     ESP_LOGCONFIG(POOL_HEATER_TAG, "      - update_active: %s", ONOFF(this->update_active_));
-    ESP_LOGCONFIG(POOL_HEATER_TAG, "      - force_celsius: %s", ONOFF(this->force_celsius_));
     dump_traits_(POOL_HEATER_TAG);
     this->driver_.dump_known_packets(POOL_HEATER_TAG);
 }
@@ -308,10 +307,6 @@ climate::ClimateTraits PoolHeater::traits() {
     traits.set_supports_action(true);
     traits.set_supports_two_point_target_temperature(false);
     traits.set_supports_current_humidity(false);
-    if (this->force_celsius_) {
-        traits.set_supported_temperature_unit(
-            climate::ClimateTemperatureUnit::CLIMATE_TEMPERATURE_UNIT_CELSIUS);
-    }
 
     // Populate supported HVAC/fan modes from frame traits.
     this->driver_.traits(traits, this->hp_data_);

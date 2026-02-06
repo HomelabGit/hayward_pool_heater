@@ -217,7 +217,6 @@ class PoolHeater : public climate::Climate, public PollingComponent {
      */
     void set_passive_mode(bool passive);
     void set_update_active(bool passive);
-    void set_force_celsius(bool force_celsius) { this->force_celsius_ = force_celsius; }
     bool get_passive_mode();
     bool is_update_active();
     heat_pump_data_t& data() { return hp_data_; }
@@ -231,7 +230,6 @@ class PoolHeater : public climate::Climate, public PollingComponent {
     std::string actual_status_;
     bool passive_mode_ = true;
     bool update_active_ = false;
-    bool force_celsius_ = false;
     text_sensor::TextSensor* actual_status_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_code_sensor_{nullptr};
     text_sensor::TextSensor* heater_status_description_sensor_{nullptr};
